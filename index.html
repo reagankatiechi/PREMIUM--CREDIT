@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Supreme Credit — quick, transparent short-term loans." />
+  <title>Supreme Credit | Quick loans, clear terms</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="modal.css" />
+  <link rel="stylesheet" href="amount-input.css" />
+  <link rel="stylesheet" href="wizard.css" />
+  <link rel="stylesheet" href="webhook.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="#top" aria-label="Supreme Credit home"><span>Supreme</span><b>Credit</b><i></i></a>
+    <a class="header-link" href="#apply">Apply online <span aria-hidden="true">→</span></a>
+  </header>
+
+  <main id="top">
+    <section class="hero section-shell">
+      <div class="hero-copy">
+        <p class="eyebrow">YOUR RELIABLE CASH PARTNER</p>
+        <h1>Need cash?<br /><em>We’ve got you.</em></h1>
+        <p class="hero-text">Simple, short-term loans designed to help you move forward with confidence.</p>
+        <div class="quick-tags" aria-label="Benefits">
+          <span>Quick loans</span><span>Easy process</span><span>Fast approval</span>
+        </div>
+        <a class="button button-orange" href="#calculator">Apply now <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="burst burst-one"></div><div class="burst burst-two"></div>
+        <div class="loan-card"><small>FAST APPROVAL</small><strong>Up to<br /><span>50,000</span></strong><p>Cash when you need it.</p></div>
+        <div class="coin coin-a">$</div><div class="coin coin-b">$</div><div class="coin coin-c">$</div>
+        <div class="hero-arrow">↗</div>
+      </div>
+    </section>
+
+    <section id="calculator" class="offer section-shell">
+      <div class="offer-intro"><p class="eyebrow">A LOAN THAT WORKS FOR YOU</p><h2>Choose the amount<br />you need today.</h2><p>Move the slider to select your exact amount.</p></div>
+      <div class="calculator-card">
+        <label class="loan-amount-label" for="loanAmount">Desired loan amount</label>
+        <div class="currency-input"><span aria-hidden="true">KSh</span><input type="number" min="500" max="50000" step="100" value="1000" id="loanAmount" inputmode="numeric" placeholder="Enter amount (KSh 500 - 50,000)" aria-describedby="loanAmountHint loanAmountError" required /></div>
+        <p class="loan-amount-hint" id="loanAmountHint">Enter an amount from KSh 500 to KSh 50,000.</p>
+        <p class="loan-amount-error" id="loanAmountError" role="alert" hidden></p>
+        <div class="calculator-summary"><span>Interest (20%)<b id="interestOutput">KSh 200</b></span><span>Total repayment<b id="totalOutput">KSh 1,200</b></span></div>
+      </div>
+    </section>
+
+    <section class="repayment-breakdown section-shell" aria-labelledby="repayment-heading">
+      <div class="breakdown-heading"><div><p class="eyebrow">FULL REPAYMENT TRANSPARENCY</p><h2 id="repayment-heading">Instant repayment breakdown.</h2></div><p>10 daily installments · 20% flat interest · No hidden fees</p></div>
+      <div class="repayment-summary" aria-live="polite">
+        <div><span>Loan amount</span><strong id="breakdownPrincipal">KSh 1,000</strong></div>
+        <div><span>Total interest (20%)</span><strong id="breakdownInterest">KSh 200</strong></div>
+        <div class="summary-total"><span>Total to repay</span><strong id="breakdownTotal">KSh 1,200</strong><small>Over 10 days</small></div>
+      </div>
+      <div class="table-wrap"><table class="repayment-table"><caption>Daily repayment schedule</caption><thead><tr><th scope="col">Installment day</th><th scope="col">Due date</th><th scope="col">Principal portion</th><th scope="col">Total due this day</th></tr></thead><tbody id="repaymentRows"></tbody></table></div>
+      <p class="breakdown-note">Your daily amounts are shown in full before you apply. The final day is adjusted by any rounding difference so your repayments always equal the total shown above.</p>
+    </section>
+
+    <section class="terms section-shell" aria-label="Loan terms">
+      <article><div class="term-icon">⌁</div><h3>Daily repayment<br />for 10 days</h3><p>For quick closure.</p></article>
+      <article><div class="term-icon">♢</div><h3>No hidden fees,<br />transparent terms</h3><p>Know exactly what you pay.</p></article>
+      <article><div class="term-icon">%</div><h3>20% interest<br />on loan amount</h3><p>Clear and straightforward.</p></article>
+      <article><div class="term-icon">ϟ</div><h3>Fast and flexible<br />when you need it</h3><p>Built around your needs.</p></article>
+    </section>
+
+    <section class="partner section-shell">
+      <div class="handoff-art" aria-hidden="true"><div class="note note-1"></div><div class="note note-2"></div><div class="arm arm-left"><span></span></div><div class="arm arm-right"><span></span></div></div>
+      <div><p class="eyebrow">SUPREME CREDIT</p><h2>Your trusted<br /><em>lending partner.</em></h2><p class="partner-text">The support you need, delivered with respect, transparency and speed.</p><div class="trust-line"><span>Fast.</span><span>Flexible.</span><span>Reliable.</span></div></div>
+    </section>
+
+    <section id="apply" class="application"><div class="section-shell application-grid">
+      <div class="application-copy"><p class="eyebrow">INSTANT APPLICATION</p><h2>Ready when<br />you are.</h2><p>Complete the secure application below. It is designed to take just a few minutes.</p><div class="application-assurance"><span>✓ Secure application</span><span>✓ Clear 10-day terms</span><span>✓ Response within 60 minutes</span></div><a class="contact-link" href="tel:+0000000000">☎&nbsp; Need help? Get in touch</a></div>
+      <form id="loanForm" novalidate>
+        <ol class="progress-stepper" aria-label="Application progress"><li class="is-active" data-progress="1"><span>1</span><b>Step 1: ID</b></li><li data-progress="2"><span>2</span><b>Step 2: Contact</b></li><li data-progress="3"><span>3</span><b>Step 3: Submit</b></li></ol>
+        <div class="form-step is-active" data-step="1"><fieldset><legend>Loan &amp; identity</legend><p class="step-intro">Start with the amount you need and your identification details.</p><label>Loan amount requested (KSh)<input id="formAmount" name="amount" type="text" readonly required aria-describedby="amountHelp" /></label><small id="amountHelp" class="field-help">Change your requested amount using the calculator above.</small><div class="form-row"><label>Full name<input name="name" autocomplete="name" required placeholder="Your full name" /></label><label>ID / Passport number<input name="applicantId" autocomplete="off" required placeholder="e.g. 12345678" /></label></div></fieldset><div class="wizard-actions"><button class="button button-green" type="button" data-next>Next <span aria-hidden="true">→</span></button></div></div>
+        <div class="form-step" data-step="2" hidden><fieldset><legend>Contact &amp; occupation</legend><p class="step-intro">Tell us how to reach you and a little about your income.</p><label>Phone number<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required placeholder="e.g. 0712 345 678" /></label><div class="form-row"><label>Occupation / employment status<select name="employmentStatus" required><option value="">Select your status</option><option>Employed</option><option>Self-employed</option><option>Informal sector</option><option>Student</option><option>Retired</option><option>Other</option></select></label><label>Monthly income (KSh)<input name="monthlyIncome" type="number" min="0" step="100" inputmode="numeric" required placeholder="e.g. 25,000" /></label></div></fieldset><div class="wizard-actions"><button class="button button-back" type="button" data-back>← Back</button><button class="button button-green" type="button" data-next>Next <span aria-hidden="true">→</span></button></div></div>
+        <div class="form-step" data-step="3" hidden><fieldset><legend>Next of kin &amp; review</legend><p class="step-intro">One final contact helps us keep your application secure.</p><div class="form-row"><label>Full name<input name="kinName" autocomplete="off" required placeholder="Next of kin's full name" /></label><label>Relationship<select name="relationship" required><option value="">Select relationship</option><option>Spouse</option><option>Parent</option><option>Sibling</option><option>Child</option><option>Friend</option><option>Other</option></select></label></div><div class="form-row"><label>Phone number<input name="kinPhone" type="tel" autocomplete="off" inputmode="tel" required placeholder="e.g. 0712 345 678" /></label><label>ID / Passport number<input name="kinId" autocomplete="off" required placeholder="e.g. 12345678" /></label></div></fieldset><label class="agreement"><input type="checkbox" name="agreement" required /><span>I confirm the details are accurate and agree to the transparent 20% interest and 10-day repayment term.</span></label><div class="wizard-actions"><button class="button button-back" type="button" data-back>← Back</button><button class="button button-green" type="submit">Submit application <span aria-hidden="true">→</span></button></div></div>
+        <p class="form-message" id="formMessage" role="status"></p>
+      </form>
+    </div></section>
+  </main>
+
+  <footer><div class="section-shell footer-inner"><div><p>GET IN TOUCH TODAY!</p><h2>Let’s help you grow and achieve more.</h2></div><a class="contact-circle" href="tel:+0000000000" aria-label="Contact Supreme Credit">☎</a></div><div class="footer-bottom section-shell"><span>© 2026 Supreme Credit. All rights reserved.</span><a href="#top">Back to top ↑</a></div></footer>
+  <div class="success-modal" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successTitle" hidden><div class="success-card"><button class="modal-close" id="closeSuccessIcon" type="button" aria-label="Close confirmation">×</button><div class="success-icon">✓</div><p class="eyebrow">APPLICATION RECEIVED</p><h2 id="successTitle">Thank you for your application!</h2><p id="successMessage" aria-live="polite">Your application is being reviewed.</p><button class="button button-green" id="closeSuccess" type="button">Done</button></div></div>
+  <script src="script.js"></script>
+</body>
+</html>
