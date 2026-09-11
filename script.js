@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const slider = document.querySelector('#loanAmount');
 const interestOutput = document.querySelector('#interestOutput');
 const totalOutput = document.querySelector('#totalOutput');
@@ -12,8 +11,8 @@ const money = new Intl.NumberFormat('en-KE', { maximumFractionDigits: 0 });
 const currency = amount => `KSh ${money.format(amount)}`;
 const dateFormat = new Intl.DateTimeFormat('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
 
-// Local PostgreSQL Express Server Endpoint
-const API_URL = 'http://localhost:3000/api/applications';
+// Live Render API Endpoint
+const API_URL = 'https://premium-credit.onrender.com/api/applications';
 
 function renderRepaymentSchedule(principal, interest, total) {
   breakdownPrincipal.textContent = currency(principal);
@@ -117,7 +116,6 @@ form.addEventListener('submit', async event => {
   const phone = form.elements.phone.value.trim();
   const principal = Number(slider.value);
 
-  // Formatted flat payload matching backend server parameters
   const payload = {
     loan_amount: principal,
     repayment_period: 10,
@@ -183,39 +181,3 @@ successModal.addEventListener('click', event => {
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !successModal.hidden) closeSuccessModal();
 });
-=======
-const slider = document.querySelector('#loanAmount');
-const amountOutput = document.querySelector('#amountOutput');
-const interestOutput = document.querySelector('#interestOutput');
-const totalOutput = document.querySelector('#totalOutput');
-const formAmount = document.querySelector('#formAmount');
-const money = new Intl.NumberFormat('en-US');
-
-function updateLoan(amount) {
-  const value = Math.min(50000, Math.max(500, Number(amount) || 500));
-  const interest = value * 0.2;
-  amountOutput.textContent = money.format(value);
-  interestOutput.textContent = money.format(interest);
-  totalOutput.textContent = money.format(value + interest);
-  formAmount.value = value;
-  slider.value = value;
-  slider.style.setProperty('--fill', `${((value - 500) / 49500) * 100}%`);
-}
-slider.addEventListener('input', e => updateLoan(e.target.value));
-formAmount.addEventListener('change', e => updateLoan(e.target.value));
-updateLoan(slider.value);
-
-document.querySelector('#loanForm').addEventListener('submit', event => {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const message = document.querySelector('#formMessage');
-  if (!form.checkValidity()) {
-    form.reportValidity();
-    message.textContent = 'Please complete all required fields.';
-    return;
-  }
-  message.textContent = 'Thanks! Your quick-loan request is ready for review.';
-  form.reset();
-  updateLoan(1000);
-});
->>>>>>> cfdacab002df4b9801e69402bb456b11bc2d24b6
