@@ -139,14 +139,23 @@ form.addEventListener('submit', async event => {
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
+    let data = {};
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = { success: false, message: 'Server spin-up in progress or invalid response format.' };
+    }
 
     if (!response.ok || !data.success) {
-      throw new Error(data.message || `Server responded with ${response.status}`);
+      throw new Error(data.message || `Server responded with status ${response.status}`);
     }
 
     document.querySelector('#successMessage').textContent = `Thank you for your application, ${applicantName}! Your request for ${currency(principal)} is being reviewed. We will contact you within 60 minutes on ${phone}.`;
@@ -157,7 +166,9 @@ form.addEventListener('submit', async event => {
     validateAndUpdateLoan();
     showStep(1);
   } catch (error) {
-    message.textContent = 'Submission failed. Please check your network or try again.';
+    message.textContent = error.message.includes('spin-up')
+      ? 'Server waking up. Please wait 10 seconds and submit again.'
+      : 'Submission failed. Please check your network connection or try again.';
     message.classList.add('is-error');
     console.error('Application database submission failed:', error);
   } finally {
