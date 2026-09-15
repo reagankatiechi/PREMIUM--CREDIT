@@ -7,7 +7,17 @@ require('dotenv').config();
 const adminRoutes = require('./server/admin-routes');
 
 const app = express();
-app.use(cors());
+
+// Explicit CORS configuration for GitHub Pages & custom Auth headers
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token']
+}));
+
+// Handle preflight OPTIONS requests across all routes
+app.options('*', cors());
+
 app.use(express.json());
 
 // Support both DATABASE_URL (for Supabase/Render) and individual DB variables (for local dev)
