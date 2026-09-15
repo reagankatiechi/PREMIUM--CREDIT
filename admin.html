@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Supreme Credit administrator dashboard" />
+  <title>Supreme Credit | Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { supreme: { 950: '#02352b', 800: '#064d3b', 700: '#0a6049', 500: '#2e8c68', gold: '#ff9900', cream: '#f8f6ee' } }, fontFamily: { sans: ['DM Sans', 'ui-sans-serif', 'system-ui'] } } } };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800">
+  <main id="loginView" class="grid min-h-screen place-items-center bg-supreme-950 p-5">
+    <section class="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl sm:p-9">
+      <div class="mb-8"><p class="font-['Outfit'] text-2xl font-extrabold tracking-tight text-supreme-800">Supreme<span class="text-supreme-gold">Credit</span></p><p class="mt-2 text-sm text-slate-500">Administrator access</p></div>
+      <form id="loginForm" class="space-y-5"><label class="block text-sm font-bold text-supreme-800">Admin access token<input id="accessToken" type="password" required autocomplete="current-password" placeholder="Enter secure access token" class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 outline-none transition focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" /></label><p id="loginError" class="hidden text-sm font-medium text-red-700" role="alert"></p><button class="w-full rounded-lg bg-supreme-800 px-4 py-3 font-bold text-white transition hover:bg-supreme-gold focus:outline-none focus:ring-4 focus:ring-amber-200">Secure sign in</button></form>
+    </section>
+  </main>
+
+  <main id="dashboardView" class="hidden">
+    <header class="border-b border-slate-200 bg-white"><div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8"><div><p class="font-['Outfit'] text-xl font-extrabold tracking-tight text-supreme-800">Supreme<span class="text-supreme-gold">Credit</span></p><p class="text-xs font-medium text-slate-500">Loan applications dashboard</p></div><button id="logoutButton" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-supreme-800 hover:bg-slate-50">Sign out</button></div></header>
+    <section class="mx-auto max-w-7xl px-5 py-8 sm:px-8"><div class="mb-7 flex flex-wrap items-end justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-[.16em] text-supreme-gold">Overview</p><h1 class="mt-1 font-['Outfit'] text-3xl font-bold text-supreme-950">Applications</h1></div><button id="refreshButton" class="rounded-lg bg-supreme-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-supreme-700">Refresh data</button></div>
+      <div class="mb-7 grid gap-4 sm:grid-cols-3"><article class="rounded-xl border border-slate-100 bg-white p-5 shadow-sm"><p class="text-sm font-medium text-slate-500">Total applications</p><p id="totalApplications" class="mt-2 font-['Outfit'] text-3xl font-bold text-supreme-800">—</p></article><article class="rounded-xl border border-slate-100 bg-white p-5 shadow-sm"><p class="text-sm font-medium text-slate-500">KSh loaned / approved</p><p id="totalApproved" class="mt-2 font-['Outfit'] text-3xl font-bold text-supreme-800">—</p></article><article class="rounded-xl border border-slate-100 bg-white p-5 shadow-sm"><p class="text-sm font-medium text-slate-500">Pending review</p><p id="pendingApplications" class="mt-2 font-['Outfit'] text-3xl font-bold text-supreme-800">—</p></article></div>
+      <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row"><input id="searchInput" type="search" placeholder="Search applicant name or national ID" class="min-w-0 flex-1 rounded-lg border border-slate-200 px-4 py-2.5 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" /><select id="statusFilter" class="rounded-lg border border-slate-200 bg-white px-4 py-2.5 font-medium text-slate-700 outline-none focus:border-supreme-gold"><option value="All">All statuses</option><option value="Pending">Pending</option><option value="Approved">Approved</option><option value="Rejected">Rejected</option></select></div>
+        <div id="tableMessage" class="hidden px-5 py-4 text-sm font-medium" role="status"></div><div class="overflow-x-auto"><table class="min-w-[960px] w-full text-left text-sm"><thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-4">Applicant</th><th class="px-5 py-4">National ID / Passport</th><th class="px-5 py-4">Phone</th><th class="px-5 py-4">Requested amount</th><th class="px-5 py-4">Repayment</th><th class="px-5 py-4">Applied</th><th class="px-5 py-4">Status</th></tr></thead><tbody id="applicationsBody" class="divide-y divide-slate-100"></tbody></table></div></section>
+    </section>
+  </main>
+
+  <script>
+    // Set this to your Render service URL, e.g. https://supreme-credit-api.onrender.com
+    const API_BASE_URL = 'https://YOUR-RENDER-SERVICE.onrender.com';
+    const storageKey = 'supreme_credit_admin_token';
+    const money = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 });
+    const date = new Intl.DateTimeFormat('en-KE', { dateStyle: 'medium', timeStyle: 'short' });
+    let applications = [];
+
+    const byId = id => document.getElementById(id);
+    const authHeaders = () => ({ 'Authorization': `Bearer ${localStorage.getItem(storageKey)}`, 'Content-Type': 'application/json' });
+    const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[character]));
+    const statusClasses = { Pending: 'bg-amber-100 text-amber-800', Approved: 'bg-emerald-100 text-emerald-800', Rejected: 'bg-red-100 text-red-700' };
+
+    function showMessage(message, isError = false) { const element = byId('tableMessage'); element.textContent = message; element.className = `px-5 py-4 text-sm font-medium ${isError ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`; }
+    function visibleApplications() { const query = byId('searchInput').value.trim().toLowerCase(); const status = byId('statusFilter').value; return applications.filter(item => (status === 'All' || item.status === status) && (!query || String(item.full_name || '').toLowerCase().includes(query) || String(item.id_number || '').toLowerCase().includes(query))); }
+    function render() { const filtered = visibleApplications(); byId('applicationsBody').innerHTML = filtered.length ? filtered.map(item => `<tr><td class="px-5 py-4"><p class="font-bold text-supreme-950">${escapeHtml(item.full_name)}</p><p class="text-xs text-slate-500">${escapeHtml(item.application_id || item.id)}</p></td><td class="px-5 py-4">${escapeHtml(item.id_number)}</td><td class="px-5 py-4">${escapeHtml(item.phone_number)}</td><td class="px-5 py-4 font-bold text-supreme-800">${money.format(item.loan_requested)}</td><td class="px-5 py-4">${item.repayment_period_days} days</td><td class="px-5 py-4">${date.format(new Date(item.created_at))}</td><td class="px-5 py-4"><label class="sr-only" for="status-${item.id}">Update ${escapeHtml(item.full_name)} status</label><select id="status-${item.id}" data-id="${item.id}" class="rounded-full border-0 px-3 py-2 text-xs font-bold ${statusClasses[item.status] || statusClasses.Pending}">${['Pending', 'Approved', 'Rejected'].map(status => `<option ${status === item.status ? 'selected' : ''}>${status}</option>`).join('')}</select></td></tr>`).join('') : '<tr><td colspan="7" class="px-5 py-12 text-center text-slate-500">No applications match your search.</td></tr>'; document.querySelectorAll('[data-id]').forEach(select => select.addEventListener('change', updateStatus)); }
+    function renderStats() { const approved = applications.filter(item => item.status === 'Approved'); byId('totalApplications').textContent = applications.length.toLocaleString('en-KE'); byId('totalApproved').textContent = money.format(approved.reduce((total, item) => total + Number(item.loan_requested || 0), 0)); byId('pendingApplications').textContent = applications.filter(item => item.status === 'Pending').length.toLocaleString('en-KE'); }
+    async function loadApplications() { showMessage('Loading applications…'); try { const response = await fetch(`${API_BASE_URL}/api/admin/applications`, { headers: authHeaders() }); if (response.status === 401) throw new Error('Unauthorized'); if (!response.ok) throw new Error('Unable to load applications'); const body = await response.json(); applications = body.applications || []; byId('tableMessage').classList.add('hidden'); renderStats(); render(); } catch (error) { showMessage(error.message === 'Unauthorized' ? 'Your session is not authorized. Sign in again.' : 'Could not load applications. Check the API URL and your network connection.', true); } }
+    async function updateStatus(event) { const select = event.currentTarget; const previous = applications.find(item => String(item.id) === select.dataset.id)?.status; select.disabled = true; try { const response = await fetch(`${API_BASE_URL}/api/admin/applications/${encodeURIComponent(select.dataset.id)}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ status: select.value }) }); if (!response.ok) throw new Error('Update failed'); const { application } = await response.json(); applications = applications.map(item => String(item.id) === String(application.id) ? application : item); renderStats(); render(); showMessage('Application status updated.'); } catch { select.value = previous; showMessage('Could not update status. Please try again.', true); select.disabled = false; } }
+    function openDashboard() { byId('loginView').classList.add('hidden'); byId('dashboardView').classList.remove('hidden'); loadApplications(); }
+    byId('loginForm').addEventListener('submit', event => { event.preventDefault(); const token = byId('accessToken').value.trim(); if (!token) return; localStorage.setItem(storageKey, token); openDashboard(); });
+    byId('logoutButton').addEventListener('click', () => { localStorage.removeItem(storageKey); byId('dashboardView').classList.add('hidden'); byId('loginView').classList.remove('hidden'); byId('accessToken').value = ''; });
+    byId('refreshButton').addEventListener('click', loadApplications); byId('searchInput').addEventListener('input', render); byId('statusFilter').addEventListener('change', render); if (localStorage.getItem(storageKey)) openDashboard();
+  </script>
+</body>
+</html>
