@@ -5,15 +5,8 @@ require('dotenv').config();
 
 const app = express();
 
-// 1. Explicit CORS configuration
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token']
-}));
-
-// Handle preflight OPTIONS requests across all routes
-app.options('*', cors());
+// Enable CORS for all routes (Express v5 compatible)
+app.use(cors());
 
 app.use(express.json());
 
@@ -53,7 +46,7 @@ const verifyAdminToken = (req, res, next) => {
   next();
 };
 
-// 2. Admin Route: Fetch all loan applications
+// Admin Route: Fetch all loan applications
 app.get('/api/admin/applications', verifyAdminToken, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM applications ORDER BY created_at DESC');
@@ -64,7 +57,7 @@ app.get('/api/admin/applications', verifyAdminToken, async (req, res) => {
   }
 });
 
-// 3. Admin Route: Update loan status (Approved/Rejected/Pending)
+// Admin Route: Update loan status (Approved/Rejected/Pending)
 app.patch('/api/admin/applications/:id', verifyAdminToken, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
