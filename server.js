@@ -35,7 +35,7 @@ const poolConfig = process.env.DATABASE_URL
 
 const pool = new Pool(poolConfig);
 
-// Root route (Fixes 'Cannot GET /' in your browser)
+// Root route (Health Check)
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
