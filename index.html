@@ -14,11 +14,175 @@
   <link rel="stylesheet" href="wizard.css" />
   <link rel="stylesheet" href="webhook.css" />
   <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- AUTHENTICATION INLINE STYLES -->
+  <style>
+    .auth-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      overflow-y: auto;
+      padding: 20px 0;
+    }
+
+    .auth-container {
+      background: #ffffff;
+      width: 90%;
+      max-width: 440px;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .auth-close {
+      position: absolute;
+      top: 15px;
+      right: 18px;
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: #666;
+      line-height: 1;
+      padding: 4px;
+      transition: color 0.2s ease;
+    }
+
+    .auth-close:hover {
+      color: #000;
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .auth-header h2 {
+      color: #1b365d;
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+    }
+
+    .auth-header p {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .auth-tabs {
+      display: flex;
+      background-color: #f0f2f5;
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      font-weight: 600;
+      color: #555;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: #1b365d;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .auth-group {
+      margin-bottom: 16px;
+    }
+
+    .auth-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .auth-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .auth-group input[type="file"] {
+      padding: 6px;
+      font-size: 0.85rem;
+      background: #f9f9f9;
+    }
+
+    .auth-group input:focus {
+      border-color: #1b365d;
+    }
+
+    .btn-auth {
+      width: 100%;
+      padding: 12px;
+      background-color: #1b365d;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn-auth:hover {
+      background-color: #122440;
+    }
+
+    .auth-alert {
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    .auth-alert.error {
+      background-color: #fde8e8;
+      color: #c81e1e;
+      border: 1px solid #f8b4b4;
+    }
+
+    .auth-alert.success {
+      background-color: #def7ec;
+      color: #03543f;
+      border: 1px solid #84e1bc;
+    }
+
+    /* ESSENTIAL HIDE RULE */
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
   <header class="site-header">
     <a class="logo" href="#top" aria-label="Supreme Credit home"><span>Supreme</span><b>Credit</b><i></i></a>
-    <a class="header-link" href="#apply">Apply online <span aria-hidden="true">→</span></a>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <button class="header-link" type="button" onclick="openAuthModal()" style="background:none; border:none; cursor:pointer;">Sign In</button>
+      <a class="header-link" href="#apply">Apply online <span aria-hidden="true">→</span></a>
+    </div>
   </header>
 
   <main id="top">
@@ -87,7 +251,195 @@
   </main>
 
   <footer><div class="section-shell footer-inner"><div><p>GET IN TOUCH TODAY!</p><h2>Let’s help you grow and achieve more.</h2></div><a class="contact-circle" href="tel:+0000000000" aria-label="Contact Supreme Credit">☎</a></div><div class="footer-bottom section-shell"><span>© 2026 Supreme Credit. All rights reserved.</span><a href="#top">Back to top ↑</a></div></footer>
+
+  <!-- APPLICATION SUCCESS MODAL -->
   <div class="success-modal" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successTitle" hidden><div class="success-card"><button class="modal-close" id="closeSuccessIcon" type="button" aria-label="Close confirmation">×</button><div class="success-icon">✓</div><p class="eyebrow">APPLICATION RECEIVED</p><h2 id="successTitle">Thank you for your application!</h2><p id="successMessage" aria-live="polite">Your application is being reviewed.</p><button class="button button-green" id="closeSuccess" type="button">Done</button></div></div>
+
+  <!-- AUTHENTICATION MODAL -->
+  <div id="authModal" class="auth-overlay hidden">
+    <div class="auth-container">
+      <button class="auth-close" onclick="closeAuthModal()" type="button" aria-label="Close modal">&times;</button>
+      
+      <div class="auth-header">
+        <h2>Supreme Credit</h2>
+        <p>Sign in to track active loans & apply faster</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button id="loginTabBtn" class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+        <button id="registerTabBtn" class="tab-btn" onclick="switchTab('register')">Register</button>
+      </div>
+
+      <div id="authAlert" class="auth-alert hidden"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="auth-group">
+          <label for="loginPhone">Phone Number</label>
+          <input type="tel" id="loginPhone" placeholder="0712345678" required />
+        </div>
+        <div class="auth-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn-auth">Sign In</button>
+      </form>
+
+      <!-- REGISTER FORM WITH IMAGE UPLOADS -->
+      <form id="registerForm" class="hidden" onsubmit="handleRegister(event)" enctype="multipart/form-data">
+        <div class="auth-group">
+          <label for="regFullName">Full Name</label>
+          <input type="text" id="regFullName" placeholder="John Doe" required />
+        </div>
+        <div class="auth-group">
+          <label for="regNationalId">National ID Number</label>
+          <input type="number" id="regNationalId" placeholder="12345678" required />
+        </div>
+        <div class="auth-group">
+          <label for="regPhone">Phone Number</label>
+          <input type="tel" id="regPhone" placeholder="0712345678" required />
+        </div>
+        <div class="auth-group">
+          <label for="regPassword">Password</label>
+          <input type="password" id="regPassword" placeholder="At least 6 characters" minlength="6" required />
+        </div>
+
+        <!-- IMAGE UPLOAD FIELDS -->
+        <div class="auth-group">
+          <label for="regProfilePic">Profile Picture</label>
+          <input type="file" id="regProfilePic" accept="image/*" required />
+        </div>
+        <div class="auth-group">
+          <label for="regIdFront">ID Card (Front Side)</label>
+          <input type="file" id="regIdFront" accept="image/*" required />
+        </div>
+        <div class="auth-group">
+          <label for="regIdBack">ID Card (Back Side)</label>
+          <input type="file" id="regIdBack" accept="image/*" required />
+        </div>
+
+        <button type="submit" class="btn-auth" id="registerSubmitBtn">Create Account</button>
+      </form>
+    </div>
+  </div>
+
   <script src="script.js"></script>
+
+  <!-- AUTHENTICATION CONTROL SCRIPT -->
+  <script>
+    function openAuthModal() {
+      const modal = document.getElementById('authModal');
+      modal.classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById('authModal');
+      modal.classList.add('hidden');
+    }
+
+    // Dismiss modal when clicking on the overlay background
+    window.addEventListener('click', function(event) {
+      const modal = document.getElementById('authModal');
+      if (event.target === modal) {
+        closeAuthModal();
+      }
+    });
+
+    function switchTab(tab) {
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const loginTabBtn = document.getElementById('loginTabBtn');
+      const registerTabBtn = document.getElementById('registerTabBtn');
+      const alertBox = document.getElementById('authAlert');
+
+      alertBox.classList.add('hidden');
+
+      if (tab === 'login') {
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        loginTabBtn.classList.add('active');
+        registerTabBtn.classList.remove('active');
+      } else {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        loginTabBtn.classList.remove('active');
+        registerTabBtn.classList.add('active');
+      }
+    }
+
+    function showAuthAlert(message, type = 'error') {
+      const alertBox = document.getElementById('authAlert');
+      alertBox.className = `auth-alert ${type}`;
+      alertBox.textContent = message;
+      alertBox.classList.remove('hidden');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const phone = document.getElementById('loginPhone').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+
+      try {
+        const res = await fetch('https://supreme-credit.onrender.com/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Login failed');
+
+        localStorage.setItem('supremeToken', data.token);
+        showAuthAlert('Login successful!', 'success');
+        
+        setTimeout(() => {
+          closeAuthModal();
+        }, 1000);
+
+      } catch (err) {
+        showAuthAlert(err.message, 'error');
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('registerSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Uploading files...';
+
+      const formData = new FormData();
+      formData.append('fullName', document.getElementById('regFullName').value.trim());
+      formData.append('nationalId', document.getElementById('regNationalId').value.trim());
+      formData.append('phone', document.getElementById('regPhone').value.trim());
+      formData.append('password', document.getElementById('regPassword').value.trim());
+
+      // Append files
+      const profilePic = document.getElementById('regProfilePic').files[0];
+      const idFront = document.getElementById('regIdFront').files[0];
+      const idBack = document.getElementById('regIdBack').files[0];
+
+      if (profilePic) formData.append('profilePic', profilePic);
+      if (idFront) formData.append('idFront', idFront);
+      if (idBack) formData.append('idBack', idBack);
+
+      try {
+        const res = await fetch('https://supreme-credit.onrender.com/api/auth/register', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Registration failed');
+
+        showAuthAlert('Account created successfully! Please sign in.', 'success');
+        switchTab('login');
+      } catch (err) {
+        showAuthAlert(err.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+      }
+    }
+  </script>
 </body>
 </html>
