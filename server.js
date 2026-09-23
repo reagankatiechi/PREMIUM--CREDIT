@@ -10,12 +10,21 @@ require('dotenv').config();
 // Initialize Express App
 const app = express();
 
-// Configure CORS to explicitly allow GitHub Pages and local development
-app.use(cors({
-  origin: '*', // Allows requests from GitHub Pages & local test environments
+// Configure CORS
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (e.g. mobile apps, curl, Postman) or any incoming web origin
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// Apply CORS middleware globally & handle HTTP OPTIONS preflight explicitly
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
