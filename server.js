@@ -9,7 +9,14 @@ require('dotenv').config();
 
 // Initialize Express App
 const app = express();
-app.use(cors());
+
+// Configure CORS to explicitly allow GitHub Pages and local development
+app.use(cors({
+  origin: '*', // Allows requests from GitHub Pages & local test environments
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token']
+}));
+
 app.use(express.json());
 
 // Initialize Africa's Talking SDK
@@ -150,15 +157,15 @@ app.post('/api/auth/register', upload.fields([
 
     if (error) {
       if (error.code === '23505') {
-        return res.status(400).json({ message: 'Phone number or ID already registered.' });
+        return res.status(400).json({ message: 'Phone number or National ID is already registered.' });
       }
       throw error;
     }
 
-    res.status(201).json({ message: 'Account registered successfully.' });
+    res.status(201).json({ success: true, message: 'Account registered successfully.' });
   } catch (err) {
     console.error('Registration Error:', err);
-    res.status(500).json({ message: err.message || 'Internal server error.' });
+    res.status(500).json({ message: err.message || 'Internal server error during registration.' });
   }
 });
 
@@ -204,6 +211,7 @@ app.post('/api/auth/login', async (req, res) => {
     );
 
     res.json({
+      success: true,
       message: 'Login successful',
       token,
       user: {
@@ -214,7 +222,7 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login Error:', err);
-    res.status(500).json({ message: 'Internal server error.' });
+    res.status(500).json({ message: 'Internal server error during login.' });
   }
 });
 
