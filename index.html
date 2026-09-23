@@ -380,7 +380,7 @@
       const password = document.getElementById('loginPassword').value.trim();
 
       try {
-        const res = await fetch('https://supreme-credit.onrender.com/api/auth/login', {
+        const res = await fetch('https://premium-credit.onrender.com/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone, password })
@@ -423,7 +423,7 @@
       if (idBack) formData.append('idBack', idBack);
 
       try {
-        const res = await fetch('https://supreme-credit.onrender.com/api/auth/register', {
+        const res = await fetch('https://premium-credit.onrender.com/api/auth/register', {
           method: 'POST',
           body: formData
         });
