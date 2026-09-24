@@ -254,6 +254,26 @@ app.get('/api/admin/applications', verifyAdminToken, async (req, res) => {
   }
 });
 
+// Fetch Registered Users
+app.get('/api/admin/users', verifyAdminToken, async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ success: false, error: 'Supabase client is not configured.' });
+    }
+
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, full_name, national_id, phone, profile_pic_url, id_front_url, id_back_url, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ success: true, count: users.length, data: users });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // PATCH Status Route with Automated SMS Trigger
 app.patch('/api/admin/applications/:id', verifyAdminToken, async (req, res) => {
   const { id } = req.params;
