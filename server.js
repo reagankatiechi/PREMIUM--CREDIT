@@ -35,11 +35,17 @@ const africastalking = require('africastalking')({
 });
 const sms = africastalking.SMS;
 
-// Initialize Supabase Client
+// Initialize Supabase Client safely
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const JWT_SECRET = process.env.JWT_SECRET || 'supreme_secret_key_123';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let supabase;
+if (SUPABASE_URL && SUPABASE_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+} else {
+  console.warn('Warning: SUPABASE_URL or SUPABASE_KEY is missing in environment variables.');
+}
 
 // Configure Multer for in-memory file handling
 const storage = multer.memoryStorage();
@@ -65,6 +71,8 @@ function formatKenyanPhone(phone) {
 
 // Helper: Upload file buffer to Supabase Storage
 async function uploadToSupabase(file, folder, nationalId) {
+  if (!supabase) throw new Error('Supabase client is not configured.');
+
   const fileExt = file.originalname.split('.').pop();
   const fileName = `${folder}/${nationalId}_${Date.now()}.${fileExt}`;
 
@@ -316,7 +324,7 @@ app.post('/api/applications', async (req, res) => {
   }
 });
 
-// Start Server
+// Start Server bound to 0.0.0.0
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Supreme Credit Server active on port ${PORT}`);
