@@ -22,9 +22,8 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// removed to prevent path-rexegp
+// Apply CORS middleware globally (handles OPTIONS preflight automatically)
 app.use(cors(corsOptions));
-app.options('{*path}', cors(corsOptions));
 
 app.use(express.json());
 
