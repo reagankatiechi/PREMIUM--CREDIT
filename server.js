@@ -40,10 +40,10 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const JWT_SECRET = process.env.JWT_SECRET || 'supreme_secret_key_123';
 
 let supabase;
-if (SUPABASE_URL && SUPABASE_KEY) {
+if (SUPABASE_URL && SUPABASE_KEY && /^https?:\/\//i.test(SUPABASE_URL)) {
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 } else {
-  console.warn('Warning: SUPABASE_URL or SUPABASE_KEY is missing in environment variables.');
+  console.warn('Warning: SUPABASE_URL is missing or not a valid HTTP/HTTPS URL.');
 }
 
 // Configure Multer for in-memory file handling
