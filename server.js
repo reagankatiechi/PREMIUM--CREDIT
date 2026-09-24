@@ -22,7 +22,7 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// Apply CORS middleware globally & handle HTTP OPTIONS preflight explicitly
+// removed to prevent path-rexegp
 app.use(cors(corsOptions));
 app.options('{*path}', cors(corsOptions));
 
@@ -325,7 +325,7 @@ app.post('/api/applications', async (req, res) => {
 });
 
 // Start Server bound to 0.0.0.0
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Supreme Credit Server active on port ${PORT}`);
 });
