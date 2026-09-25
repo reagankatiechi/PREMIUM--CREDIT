@@ -3,443 +3,444 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Supreme Credit — quick, transparent short-term loans." />
-  <title>Supreme Credit | Quick loans, clear terms</title>
+  <meta name="description" content="Supreme Credit | Fast, reliable personal and business loans" />
+  <title>Supreme Credit | Online Loan Application & Client Portal</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            supreme: {
+              950: '#02352b',
+              800: '#064d3b',
+              700: '#0a6049',
+              500: '#2e8c68',
+              gold: '#ff9900',
+              cream: '#f8f6ee'
+            }
+          },
+          fontFamily: {
+            sans: ['DM Sans', 'ui-sans-serif', 'system-ui']
+          }
+        }
+      }
+    };
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="modal.css" />
-  <link rel="stylesheet" href="amount-input.css" />
-  <link rel="stylesheet" href="wizard.css" />
-  <link rel="stylesheet" href="webhook.css" />
-  <link rel="icon" type="image/png" href="favicon.png">
-
-  <!-- AUTHENTICATION INLINE STYLES -->
-  <style>
-    .auth-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      overflow-y: auto;
-      padding: 20px 0;
-    }
-
-    .auth-container {
-      background: #ffffff;
-      width: 90%;
-      max-width: 440px;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-      position: relative;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .auth-close {
-      position: absolute;
-      top: 15px;
-      right: 18px;
-      background: none;
-      border: none;
-      font-size: 1.8rem;
-      cursor: pointer;
-      color: #666;
-      line-height: 1;
-      padding: 4px;
-      transition: color 0.2s ease;
-    }
-
-    .auth-close:hover {
-      color: #000;
-    }
-
-    .auth-header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .auth-header h2 {
-      color: #1b365d;
-      font-size: 1.8rem;
-      margin-bottom: 6px;
-    }
-
-    .auth-header p {
-      color: #666;
-      font-size: 0.9rem;
-    }
-
-    .auth-tabs {
-      display: flex;
-      background-color: #f0f2f5;
-      border-radius: 8px;
-      padding: 4px;
-      margin-bottom: 20px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      background: transparent;
-      font-weight: 600;
-      color: #555;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-      background: #ffffff;
-      color: #1b365d;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    }
-
-    .auth-group {
-      margin-bottom: 16px;
-    }
-
-    .auth-group label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    .auth-group input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 0.95rem;
-      outline: none;
-    }
-
-    .auth-group input[type="file"] {
-      padding: 6px;
-      font-size: 0.85rem;
-      background: #f9f9f9;
-    }
-
-    .auth-group input:focus {
-      border-color: #1b365d;
-    }
-
-    .btn-auth {
-      width: 100%;
-      padding: 12px;
-      background-color: #1b365d;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .btn-auth:hover {
-      background-color: #122440;
-    }
-
-    .auth-alert {
-      padding: 10px 14px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      margin-bottom: 16px;
-    }
-
-    .auth-alert.error {
-      background-color: #fde8e8;
-      color: #c81e1e;
-      border: 1px solid #f8b4b4;
-    }
-
-    .auth-alert.success {
-      background-color: #def7ec;
-      color: #03543f;
-      border: 1px solid #84e1bc;
-    }
-
-    /* ESSENTIAL HIDE RULE */
-    .hidden {
-      display: none !important;
-    }
-  </style>
 </head>
-<body>
-  <header class="site-header">
-    <a class="logo" href="#top" aria-label="Supreme Credit home"><span>Supreme</span><b>Credit</b><i></i></a>
-    <div style="display: flex; gap: 10px; align-items: center;">
-      <button class="header-link" type="button" onclick="openAuthModal()" style="background:none; border:none; cursor:pointer;">Sign In</button>
-      <a class="header-link" href="#apply">Apply online <span aria-hidden="true">→</span></a>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
+      <a href="#" class="font-['Outfit'] text-2xl font-extrabold tracking-tight text-supreme-800">
+        Supreme<span class="text-supreme-gold">Credit</span>
+      </a>
+      
+      <div class="flex items-center gap-3">
+        <button id="openAuthBtn" class="rounded-lg border border-supreme-800 px-4 py-2 text-sm font-bold text-supreme-800 transition hover:bg-supreme-950 hover:text-white">
+          Sign In / Register
+        </button>
+        <a href="#applySection" class="rounded-lg bg-supreme-800 px-4 py-2 text-sm font-bold text-white transition hover:bg-supreme-gold">
+          Apply online &rarr;
+        </a>
+      </div>
     </div>
   </header>
 
-  <main id="top">
-    <section class="hero section-shell">
-      <div class="hero-copy">
-        <p class="eyebrow">YOUR RELIABLE CASH PARTNER</p>
-        <h1>Need cash?<br /><em>We’ve got you.</em></h1>
-        <p class="hero-text">Simple, short-term loans designed to help you move forward with confidence.</p>
-        <div class="quick-tags" aria-label="Benefits">
-          <span>Quick loans</span><span>Easy process</span><span>Fast approval</span>
+  <!-- HERO SECTION -->
+  <section class="bg-supreme-950 py-16 text-white sm:py-24">
+    <div class="mx-auto max-w-7xl px-5 sm:px-8">
+      <div class="max-w-2xl">
+        <p class="text-xs font-bold uppercase tracking-[.2em] text-supreme-gold">Your Reliable Financial Partner</p>
+        <h1 class="mt-3 font-['Outfit'] text-4xl font-extrabold leading-tight sm:text-6xl">
+          NEED QUICK CASH? WE'VE GOT YOU.
+        </h1>
+        <p class="mt-4 text-slate-300 sm:text-lg">
+          Simple, short-term loan options designed to keep you moving forward with quick approvals and fair repayment rates.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-4">
+          <a href="#applySection" class="rounded-xl bg-supreme-gold px-6 py-3.5 font-bold text-supreme-950 shadow-lg transition hover:bg-amber-400">
+            APPLY NOW
+          </a>
+          <button id="openModalHeroBtn" class="rounded-xl border border-slate-700 px-6 py-3.5 font-bold text-white transition hover:border-slate-500 hover:bg-white/5">
+            QUICK LOANS
+          </button>
         </div>
-        <a class="button button-orange" href="#calculator">Apply now <span aria-hidden="true">→</span></a>
       </div>
-      <div class="hero-visual" aria-hidden="true">
-        <div class="burst burst-one"></div><div class="burst burst-two"></div>
-        <div class="loan-card"><small>FAST APPROVAL</small><strong>Up to<br /><span>50,000</span></strong><p>Cash when you need it.</p></div>
-        <div class="coin coin-a">$</div><div class="coin coin-b">$</div><div class="coin coin-c">$</div>
-        <div class="hero-arrow">↗</div>
+    </div>
+  </section>
+
+  <!-- LOAN APPLICATION SECTION -->
+  <section id="applySection" class="mx-auto max-w-4xl px-5 py-16 sm:px-8">
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl sm:p-10">
+      <div class="mb-8">
+        <h2 class="font-['Outfit'] text-2xl font-bold text-supreme-950 sm:text-3xl">Apply for a Loan</h2>
+        <p class="mt-1 text-sm text-slate-500">Fill out your details below to request instant processing.</p>
       </div>
-    </section>
 
-    <section id="calculator" class="offer section-shell">
-      <div class="offer-intro"><p class="eyebrow">A LOAN THAT WORKS FOR YOU</p><h2>Choose the amount<br />you need today.</h2><p>Move the slider to select your exact amount.</p></div>
-      <div class="calculator-card">
-        <label class="loan-amount-label" for="loanAmount">Desired loan amount</label>
-        <div class="currency-input"><span aria-hidden="true">KSh</span><input type="number" min="500" max="50000" step="100" value="1000" id="loanAmount" inputmode="numeric" placeholder="Enter amount (KSh 500 - 50,000)" aria-describedby="loanAmountHint loanAmountError" required /></div>
-        <p class="loan-amount-hint" id="loanAmountHint">Enter an amount from KSh 500 to KSh 50,000.</p>
-        <p class="loan-amount-error" id="loanAmountError" role="alert" hidden></p>
-        <div class="calculator-summary"><span>Interest (20%)<b id="interestOutput">KSh 200</b></span><span>Total repayment<b id="totalOutput">KSh 1,200</b></span></div>
-      </div>
-    </section>
+      <form id="loanApplicationForm" class="space-y-6">
+        <div id="loanFormError" class="hidden rounded-lg bg-red-50 p-4 text-sm font-medium text-red-700" role="alert"></div>
+        <div id="loanFormSuccess" class="hidden rounded-lg bg-emerald-50 p-4 text-sm font-medium text-emerald-800" role="alert"></div>
 
-    <section class="repayment-breakdown section-shell" aria-labelledby="repayment-heading">
-      <div class="breakdown-heading"><div><p class="eyebrow">FULL REPAYMENT TRANSPARENCY</p><h2 id="repayment-heading">Instant repayment breakdown.</h2></div><p>10 daily installments · 20% flat interest · No hidden fees</p></div>
-      <div class="repayment-summary" aria-live="polite">
-        <div><span>Loan amount</span><strong id="breakdownPrincipal">KSh 1,000</strong></div>
-        <div><span>Total interest (20%)</span><strong id="breakdownInterest">KSh 200</strong></div>
-        <div class="summary-total"><span>Total to repay</span><strong id="breakdownTotal">KSh 1,200</strong><small>Over 10 days</small></div>
-      </div>
-      <div class="table-wrap"><table class="repayment-table"><caption>Daily repayment schedule</caption><thead><tr><th scope="col">Installment day</th><th scope="col">Due date</th><th scope="col">Principal portion</th><th scope="col">Total due this day</th></tr></thead><tbody id="repaymentRows"></tbody></table></div>
-      <p class="breakdown-note">Your daily amounts are shown in full before you apply. The final day is adjusted by any rounding difference so your repayments always equal the total shown above.</p>
-    </section>
+        <div class="grid gap-6 sm:grid-cols-2">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Full Name</label>
+            <input type="text" id="loanApplicantName" required class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" placeholder="e.g. John Doe" />
+          </div>
 
-    <section class="terms section-shell" aria-label="Loan terms">
-      <article><div class="term-icon">⌁</div><h3>Daily repayment<br />for 10 days</h3><p>For quick closure.</p></article>
-      <article><div class="term-icon">♢</div><h3>No hidden fees,<br />transparent terms</h3><p>Know exactly what you pay.</p></article>
-      <article><div class="term-icon">%</div><h3>20% interest<br />on loan amount</h3><p>Clear and straightforward.</p></article>
-      <article><div class="term-icon">ϟ</div><h3>Fast and flexible<br />when you need it</h3><p>Built around your needs.</p></article>
-    </section>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">National ID Number</label>
+            <input type="text" id="loanIdNumber" required class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" placeholder="e.g. 12345678" />
+          </div>
 
-    <section class="partner section-shell">
-      <div class="handoff-art" aria-hidden="true"><div class="note note-1"></div><div class="note note-2"></div><div class="arm arm-left"><span></span></div><div class="arm arm-right"><span></span></div></div>
-      <div><p class="eyebrow">SUPREME CREDIT</p><h2>Your trusted<br /><em>lending partner.</em></h2><p class="partner-text">The support you need, delivered with respect, transparency and speed.</p><div class="trust-line"><span>Fast.</span><span>Flexible.</span><span>Reliable.</span></div></div>
-    </section>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Phone Number (M-Pesa)</label>
+            <input type="tel" id="loanPhoneNumber" required class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" placeholder="0712345678" />
+          </div>
 
-    <section id="apply" class="application"><div class="section-shell application-grid">
-      <div class="application-copy"><p class="eyebrow">INSTANT APPLICATION</p><h2>Ready when<br />you are.</h2><p>Complete the secure application below. It is designed to take just a few minutes.</p><div class="application-assurance"><span>✓ Secure application</span><span>✓ Clear 10-day terms</span><span>✓ Response within 60 minutes</span></div><a class="contact-link" href="tel:+0000000000">☎&nbsp; Need help? Get in touch</a></div>
-      <form id="loanForm" novalidate>
-        <ol class="progress-stepper" aria-label="Application progress"><li class="is-active" data-progress="1"><span>1</span><b>Step 1: ID</b></li><li data-progress="2"><span>2</span><b>Step 2: Contact</b></li><li data-progress="3"><span>3</span><b>Step 3: Submit</b></li></ol>
-        <div class="form-step is-active" data-step="1"><fieldset><legend>Loan &amp; identity</legend><p class="step-intro">Start with the amount you need and your identification details.</p><label>Loan amount requested (KSh)<input id="formAmount" name="amount" type="text" readonly required aria-describedby="amountHelp" /></label><small id="amountHelp" class="field-help">Change your requested amount using the calculator above.</small><div class="form-row"><label>Full name<input name="name" autocomplete="name" required placeholder="Your full name" /></label><label>ID / Passport number<input name="applicantId" autocomplete="off" required placeholder="e.g. 12345678" /></label></div></fieldset><div class="wizard-actions"><button class="button button-green" type="button" data-next>Next <span aria-hidden="true">→</span></button></div></div>
-        <div class="form-step" data-step="2" hidden><fieldset><legend>Contact &amp; occupation</legend><p class="step-intro">Tell us how to reach you and a little about your income.</p><label>Phone number<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required placeholder="e.g. 0712 345 678" /></label><div class="form-row"><label>Occupation / employment status<select name="employmentStatus" required><option value="">Select your status</option><option>Employed</option><option>Self-employed</option><option>Informal sector</option><option>Student</option><option>Retired</option><option>Other</option></select></label><label>Monthly income (KSh)<input name="monthlyIncome" type="number" min="0" step="100" inputmode="numeric" required placeholder="e.g. 25,000" /></label></div></fieldset><div class="wizard-actions"><button class="button button-back" type="button" data-back>← Back</button><button class="button button-green" type="button" data-next>Next <span aria-hidden="true">→</span></button></div></div>
-        <div class="form-step" data-step="3" hidden><fieldset><legend>Next of kin &amp; review</legend><p class="step-intro">One final contact helps us keep your application secure.</p><div class="form-row"><label>Full name<input name="kinName" autocomplete="off" required placeholder="Next of kin's full name" /></label><label>Relationship<select name="relationship" required><option value="">Select relationship</option><option>Spouse</option><option>Parent</option><option>Sibling</option><option>Child</option><option>Friend</option><option>Other</option></select></label></div><div class="form-row"><label>Phone number<input name="kinPhone" type="tel" autocomplete="off" inputmode="tel" required placeholder="e.g. 0712 345 678" /></label><label>ID / Passport number<input name="kinId" autocomplete="off" required placeholder="e.g. 12345678" /></label></div></fieldset><label class="agreement"><input type="checkbox" name="agreement" required /><span>I confirm the details are accurate and agree to the transparent 20% interest and 10-day repayment term.</span></label><div class="wizard-actions"><button class="button button-back" type="button" data-back>← Back</button><button class="button button-green" type="submit">Submit application <span aria-hidden="true">→</span></button></div></div>
-        <p class="form-message" id="formMessage" role="status"></p>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Employment Type</label>
+            <select id="loanEmploymentType" class="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none focus:border-supreme-gold">
+              <option value="Employed">Employed</option>
+              <option value="Self-Employed">Self-Employed / Business</option>
+              <option value="Unemployed">Unemployed</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Requested Amount (KSh)</label>
+            <input type="number" id="loanAmount" min="500" max="100000" step="500" required class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" placeholder="e.g. 10000" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Repayment Period</label>
+            <select id="loanRepaymentPeriod" class="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 outline-none focus:border-supreme-gold">
+              <option value="1 Month">1 Month</option>
+              <option value="2 Months">2 Months</option>
+              <option value="3 Months">3 Months</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Monthly Income (KSh)</label>
+            <input type="number" id="loanMonthlyIncome" required class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" placeholder="e.g. 25000" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Next of Kin Name</label>
+            <input type="text" id="loanNextOfKinName" required class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" placeholder="e.g. Mary Doe" />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Next of Kin Phone</label>
+            <input type="tel" id="loanNextOfKinPhone" required class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" placeholder="0787654321" />
+          </div>
+        </div>
+
+        <button type="submit" id="submitLoanBtn" class="w-full rounded-xl bg-supreme-800 py-4 font-bold text-white transition hover:bg-supreme-gold focus:outline-none focus:ring-4 focus:ring-amber-200">
+          Submit Loan Request
+        </button>
       </form>
-    </div></section>
-  </main>
+    </div>
+  </section>
 
-  <footer><div class="section-shell footer-inner"><div><p>GET IN TOUCH TODAY!</p><h2>Let’s help you grow and achieve more.</h2></div><a class="contact-circle" href="tel:+0000000000" aria-label="Contact Supreme Credit">☎</a></div><div class="footer-bottom section-shell"><span>© 2026 Supreme Credit. All rights reserved.</span><a href="#top">Back to top ↑</a></div></footer>
-
-  <!-- APPLICATION SUCCESS MODAL -->
-  <div class="success-modal" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successTitle" hidden><div class="success-card"><button class="modal-close" id="closeSuccessIcon" type="button" aria-label="Close confirmation">×</button><div class="success-icon">✓</div><p class="eyebrow">APPLICATION RECEIVED</p><h2 id="successTitle">Thank you for your application!</h2><p id="successMessage" aria-live="polite">Your application is being reviewed.</p><button class="button button-green" id="closeSuccess" type="button">Done</button></div></div>
-
-  <!-- AUTHENTICATION MODAL -->
-  <div id="authModal" class="auth-overlay hidden">
-    <div class="auth-container">
-      <button class="auth-close" onclick="closeAuthModal()" type="button" aria-label="Close modal">&times;</button>
+  <!-- AUTH MODAL (SIGN IN / REGISTER) -->
+  <div id="authModal" class="fixed inset-0 z-50 flex hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div class="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
       
-      <div class="auth-header">
-        <h2>Supreme Credit</h2>
-        <p>Sign in to track active loans & apply faster</p>
+      <!-- CLOSE BUTTON -->
+      <button id="closeAuthBtn" class="absolute right-4 top-4 rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+        &#x2715;
+      </button>
+
+      <div class="mb-6 text-center">
+        <p class="font-['Outfit'] text-2xl font-extrabold tracking-tight text-supreme-800">
+          Supreme<span class="text-supreme-gold">Credit</span>
+        </p>
+        <p class="mt-1 text-xs text-slate-500">Sign in to track active loans & apply faster</p>
       </div>
 
-      <div class="auth-tabs">
-        <button id="loginTabBtn" class="tab-btn active" onclick="switchTab('login')">Sign In</button>
-        <button id="registerTabBtn" class="tab-btn" onclick="switchTab('register')">Register</button>
+      <!-- TAB TOGGLES -->
+      <div class="mb-6 flex rounded-xl bg-slate-100 p-1">
+        <button id="tabSignIn" class="w-1/2 rounded-lg py-2 text-sm font-bold text-supreme-950 shadow bg-white">Sign In</button>
+        <button id="tabRegister" class="w-1/2 rounded-lg py-2 text-sm font-bold text-slate-500">Register</button>
       </div>
 
-      <div id="authAlert" class="auth-alert hidden"></div>
+      <!-- ERROR BANNER -->
+      <div id="authErrorBanner" class="hidden mb-4 rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700" role="alert"></div>
+      <div id="authSuccessBanner" class="hidden mb-4 rounded-lg bg-emerald-50 p-3 text-xs font-semibold text-emerald-800" role="alert"></div>
 
-      <!-- LOGIN FORM -->
-      <form id="loginForm" onsubmit="handleLogin(event)">
-        <div class="auth-group">
-          <label for="loginPhone">Phone Number</label>
-          <input type="tel" id="loginPhone" placeholder="0712345678" required />
+      <!-- SIGN IN FORM -->
+      <form id="signInForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700">Phone Number</label>
+          <input type="tel" id="loginPhone" required placeholder="0712345678" class="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-supreme-gold focus:ring-2 focus:ring-amber-100" />
         </div>
-        <div class="auth-group">
-          <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" required />
+        <div>
+          <label class="block text-xs font-bold text-slate-700">Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-supreme-gold focus:ring-2 focus:ring-amber-100" />
         </div>
-        <button type="submit" class="btn-auth">Sign In</button>
+        <button type="submit" id="signInSubmitBtn" class="w-full rounded-lg bg-supreme-800 py-3 font-bold text-white transition hover:bg-supreme-gold">
+          Sign In
+        </button>
       </form>
 
-      <!-- REGISTER FORM WITH IMAGE UPLOADS -->
-      <form id="registerForm" class="hidden" onsubmit="handleRegister(event)" enctype="multipart/form-data">
-        <div class="auth-group">
-          <label for="regFullName">Full Name</label>
-          <input type="text" id="regFullName" placeholder="John Doe" required />
+      <!-- REGISTER FORM -->
+      <form id="registerForm" class="hidden space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700">Full Name</label>
+          <input type="text" id="regFullName" required placeholder="John Doe" class="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-supreme-gold focus:ring-2 focus:ring-amber-100" />
         </div>
-        <div class="auth-group">
-          <label for="regNationalId">National ID Number</label>
-          <input type="number" id="regNationalId" placeholder="12345678" required />
+        <div>
+          <label class="block text-xs font-bold text-slate-700">National ID Number</label>
+          <input type="text" id="regNationalId" required placeholder="12345678" class="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-supreme-gold focus:ring-2 focus:ring-amber-100" />
         </div>
-        <div class="auth-group">
-          <label for="regPhone">Phone Number</label>
-          <input type="tel" id="regPhone" placeholder="0712345678" required />
+        <div>
+          <label class="block text-xs font-bold text-slate-700">Phone Number</label>
+          <input type="tel" id="regPhone" required placeholder="0712345678" class="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-supreme-gold focus:ring-2 focus:ring-amber-100" />
         </div>
-        <div class="auth-group">
-          <label for="regPassword">Password</label>
-          <input type="password" id="regPassword" placeholder="At least 6 characters" minlength="6" required />
+        <div>
+          <label class="block text-xs font-bold text-slate-700">Password</label>
+          <input type="password" id="regPassword" required placeholder="••••••••" class="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-supreme-gold focus:ring-2 focus:ring-amber-100" />
         </div>
-
-        <!-- IMAGE UPLOAD FIELDS -->
-        <div class="auth-group">
-          <label for="regProfilePic">Profile Picture</label>
-          <input type="file" id="regProfilePic" accept="image/*" required />
+        <div>
+          <label class="block text-xs font-bold text-slate-700">Profile Photo</label>
+          <input type="file" id="regProfilePic" accept="image/*" required class="mt-1 w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:font-semibold file:text-slate-700" />
         </div>
-        <div class="auth-group">
-          <label for="regIdFront">ID Card (Front Side)</label>
-          <input type="file" id="regIdFront" accept="image/*" required />
+        <div>
+          <label class="block text-xs font-bold text-slate-700">National ID Front Scan</label>
+          <input type="file" id="regIdFront" accept="image/*" required class="mt-1 w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:font-semibold file:text-slate-700" />
         </div>
-        <div class="auth-group">
-          <label for="regIdBack">ID Card (Back Side)</label>
-          <input type="file" id="regIdBack" accept="image/*" required />
+        <div>
+          <label class="block text-xs font-bold text-slate-700">National ID Back Scan</label>
+          <input type="file" id="regIdBack" accept="image/*" required class="mt-1 w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:font-semibold file:text-slate-700" />
         </div>
-
-        <button type="submit" class="btn-auth" id="registerSubmitBtn">Create Account</button>
+        <button type="submit" id="registerSubmitBtn" class="w-full rounded-lg bg-supreme-800 py-3 font-bold text-white transition hover:bg-supreme-gold">
+          Create Account
+        </button>
       </form>
+
     </div>
   </div>
 
-  <script src="script.js"></script>
-
-  <!-- AUTHENTICATION CONTROL SCRIPT -->
   <script>
-    function openAuthModal() {
-      const modal = document.getElementById('authModal');
-      modal.classList.remove('hidden');
+    const API_BASE_URL = 'https://premium-credit.onrender.com';
+
+    const byId = id => document.getElementById(id);
+
+    function showAuthError(msg) {
+      const banner = byId('authErrorBanner');
+      banner.textContent = msg;
+      banner.classList.remove('hidden');
+      byId('authSuccessBanner').classList.add('hidden');
     }
 
-    function closeAuthModal() {
-      const modal = document.getElementById('authModal');
-      modal.classList.add('hidden');
+    function showAuthSuccess(msg) {
+      const banner = byId('authSuccessBanner');
+      banner.textContent = msg;
+      banner.classList.remove('hidden');
+      byId('authErrorBanner').classList.add('hidden');
     }
 
-    // Dismiss modal when clicking on the overlay background
-    window.addEventListener('click', function(event) {
-      const modal = document.getElementById('authModal');
-      if (event.target === modal) {
-        closeAuthModal();
-      }
+    function clearAuthBanners() {
+      byId('authErrorBanner').classList.add('hidden');
+      byId('authSuccessBanner').classList.add('hidden');
+    }
+
+    // Modal Control
+    const authModal = byId('authModal');
+    byId('openAuthBtn').addEventListener('click', () => { clearAuthBanners(); authModal.classList.remove('hidden'); });
+    byId('openModalHeroBtn').addEventListener('click', () => { clearAuthBanners(); authModal.classList.remove('hidden'); });
+    byId('closeAuthBtn').addEventListener('click', () => authModal.classList.add('hidden'));
+
+    // Tab Switches
+    byId('tabSignIn').addEventListener('click', () => {
+      clearAuthBanners();
+      byId('tabSignIn').className = 'w-1/2 rounded-lg py-2 text-sm font-bold text-supreme-950 shadow bg-white';
+      byId('tabRegister').className = 'w-1/2 rounded-lg py-2 text-sm font-bold text-slate-500';
+      byId('signInForm').classList.remove('hidden');
+      byId('registerForm').classList.add('hidden');
     });
 
-    function switchTab(tab) {
-      const loginForm = document.getElementById('loginForm');
-      const registerForm = document.getElementById('registerForm');
-      const loginTabBtn = document.getElementById('loginTabBtn');
-      const registerTabBtn = document.getElementById('registerTabBtn');
-      const alertBox = document.getElementById('authAlert');
+    byId('tabRegister').addEventListener('click', () => {
+      clearAuthBanners();
+      byId('tabRegister').className = 'w-1/2 rounded-lg py-2 text-sm font-bold text-supreme-950 shadow bg-white';
+      byId('tabSignIn').className = 'w-1/2 rounded-lg py-2 text-sm font-bold text-slate-500';
+      byId('registerForm').classList.remove('hidden');
+      byId('signInForm').classList.add('hidden');
+    });
 
-      alertBox.classList.add('hidden');
-
-      if (tab === 'login') {
-        loginForm.classList.remove('hidden');
-        registerForm.classList.add('hidden');
-        loginTabBtn.classList.add('active');
-        registerTabBtn.classList.remove('active');
-      } else {
-        loginForm.classList.add('hidden');
-        registerForm.classList.remove('hidden');
-        loginTabBtn.classList.remove('active');
-        registerTabBtn.classList.add('active');
-      }
-    }
-
-    function showAuthAlert(message, type = 'error') {
-      const alertBox = document.getElementById('authAlert');
-      alertBox.className = `auth-alert ${type}`;
-      alertBox.textContent = message;
-      alertBox.classList.remove('hidden');
-    }
-
-    async function handleLogin(e) {
+    // -------------------------------------------------------------
+    // USER REGISTRATION WITH SAFE RESPONSE PARSING
+    // -------------------------------------------------------------
+    byId('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const phone = document.getElementById('loginPhone').value.trim();
-      const password = document.getElementById('loginPassword').value.trim();
+      clearAuthBanners();
 
-      try {
-        const res = await fetch('https://premium-credit.onrender.com/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone, password })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Login failed');
-
-        localStorage.setItem('supremeToken', data.token);
-        showAuthAlert('Login successful!', 'success');
-        
-        setTimeout(() => {
-          closeAuthModal();
-        }, 1000);
-
-      } catch (err) {
-        showAuthAlert(err.message, 'error');
-      }
-    }
-
-    async function handleRegister(e) {
-      e.preventDefault();
-      
-      const submitBtn = document.getElementById('registerSubmitBtn');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Uploading files...';
+      const btn = byId('registerSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Uploading & Registering...';
 
       const formData = new FormData();
-      formData.append('fullName', document.getElementById('regFullName').value.trim());
-      formData.append('nationalId', document.getElementById('regNationalId').value.trim());
-      formData.append('phone', document.getElementById('regPhone').value.trim());
-      formData.append('password', document.getElementById('regPassword').value.trim());
-
-      // Append files
-      const profilePic = document.getElementById('regProfilePic').files[0];
-      const idFront = document.getElementById('regIdFront').files[0];
-      const idBack = document.getElementById('regIdBack').files[0];
-
-      if (profilePic) formData.append('profilePic', profilePic);
-      if (idFront) formData.append('idFront', idFront);
-      if (idBack) formData.append('idBack', idBack);
+      formData.append('fullName', byId('regFullName').value.trim());
+      formData.append('nationalId', byId('regNationalId').value.trim());
+      formData.append('phone', byId('regPhone').value.trim());
+      formData.append('password', byId('regPassword').value);
+      formData.append('profilePic', byId('regProfilePic').files[0]);
+      formData.append('idFront', byId('regIdFront').files[0]);
+      formData.append('idBack', byId('regIdBack').files[0]);
 
       try {
-        const res = await fetch('https://premium-credit.onrender.com/api/auth/register', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
           method: 'POST',
           body: formData
         });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Registration failed');
+        // SAFELY HANDLE JSON VS HTML SERVER RESPONSES
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const rawText = await response.text();
+          console.error('Non-JSON Server Output:', rawText);
+          throw new Error(`Server returned status ${response.status}. Check Render server logs.`);
+        }
 
-        showAuthAlert('Account created successfully! Please sign in.', 'success');
-        switchTab('login');
+        if (!response.ok) {
+          throw new Error(data.message || 'Registration failed.');
+        }
+
+        showAuthSuccess('Account registered successfully! Please Sign In.');
+        byId('registerForm').reset();
+        
+        // Switch to sign in tab after 1.5 seconds
+        setTimeout(() => {
+          byId('tabSignIn').click();
+        }, 1500);
+
       } catch (err) {
-        showAuthAlert(err.message, 'error');
+        showAuthError(err.message);
       } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
       }
-    }
+    });
+
+    // -------------------------------------------------------------
+    // USER LOGIN
+    // -------------------------------------------------------------
+    byId('signInForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearAuthBanners();
+
+      const btn = byId('signInSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      const phone = byId('loginPhone').value.trim();
+      const password = byId('loginPassword').value;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, password })
+        });
+
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          throw new Error(`Server returned status ${response.status}.`);
+        }
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Invalid credentials.');
+        }
+
+        localStorage.setItem('supreme_user_token', data.token);
+        localStorage.setItem('supreme_user_data', JSON.stringify(data.user));
+
+        showAuthSuccess(`Welcome back, ${data.user.fullName}!`);
+        setTimeout(() => {
+          authModal.classList.add('hidden');
+          byId('signInForm').reset();
+        }, 1200);
+
+      } catch (err) {
+        showAuthError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    });
+
+    // -------------------------------------------------------------
+    // LOAN APPLICATION SUBMISSION
+    // -------------------------------------------------------------
+    byId('loanApplicationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const errBox = byId('loanFormError');
+      const succBox = byId('loanFormSuccess');
+      const btn = byId('submitLoanBtn');
+
+      errBox.classList.add('hidden');
+      succBox.classList.add('hidden');
+
+      btn.disabled = true;
+      btn.textContent = 'Submitting Application...';
+
+      const payload = {
+        applicant_name: byId('loanApplicantName').value.trim(),
+        id_number: byId('loanIdNumber').value.trim(),
+        phone_number: byId('loanPhoneNumber').value.trim(),
+        employment_type: byId('loanEmploymentType').value,
+        loan_amount: Number(byId('loanAmount').value),
+        repayment_period: byId('loanRepaymentPeriod').value,
+        monthly_income: Number(byId('loanMonthlyIncome').value),
+        next_of_kin_name: byId('loanNextOfKinName').value.trim(),
+        next_of_kin_phone: byId('loanNextOfKinPhone').value.trim()
+      };
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/applications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          throw new Error(`Server returned status ${response.status}.`);
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to submit application.');
+        }
+
+        succBox.textContent = 'Your loan application was submitted successfully! You will receive an SMS update shortly.';
+        succBox.classList.remove('hidden');
+        byId('loanApplicationForm').reset();
+
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Submit Loan Request';
+      }
+    });
   </script>
 </body>
 </html>
