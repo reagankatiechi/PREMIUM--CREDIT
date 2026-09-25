@@ -55,7 +55,7 @@
       <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
         <div>
           <p class="font-['Outfit'] text-xl font-extrabold tracking-tight text-supreme-800">Supreme<span class="text-supreme-gold">Credit</span></p>
-          <p class="text-xs font-medium text-slate-500">Loan applications dashboard</p>
+          <p class="text-xs font-medium text-slate-500">Loan applications & Registered Users</p>
         </div>
         <button id="logoutButton" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-supreme-800 hover:bg-slate-50">Sign out</button>
       </div>
@@ -64,11 +64,18 @@
       <div class="mb-7 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p class="text-xs font-bold uppercase tracking-[.16em] text-supreme-gold">Overview</p>
-          <h1 class="mt-1 font-['Outfit'] text-3xl font-bold text-supreme-950">Applications</h1>
+          <h1 class="mt-1 font-['Outfit'] text-3xl font-bold text-supreme-950">Management Portal</h1>
         </div>
         <button id="refreshButton" class="rounded-lg bg-supreme-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-supreme-700">Refresh data</button>
       </div>
-      <div class="mb-7 grid gap-4 sm:grid-cols-3">
+
+      <!-- Navigation Tabs -->
+      <div class="mb-6 flex border-b border-slate-200 gap-4">
+        <button id="tabApplications" class="pb-3 text-sm font-bold text-supreme-800 border-b-2 border-supreme-800">Loan Applications</button>
+        <button id="tabUsers" class="pb-3 text-sm font-bold text-slate-500 hover:text-supreme-800">Registered Users & KYC Uploads</button>
+      </div>
+
+      <div id="statsRow" class="mb-7 grid gap-4 sm:grid-cols-3">
         <article class="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
           <p class="text-sm font-medium text-slate-500">Total applications</p>
           <p id="totalApplications" class="mt-2 font-['Outfit'] text-3xl font-bold text-supreme-800">—</p>
@@ -78,13 +85,14 @@
           <p id="totalApproved" class="mt-2 font-['Outfit'] text-3xl font-bold text-supreme-800">—</p>
         </article>
         <article class="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
-          <p class="text-sm font-medium text-slate-500">Pending review</p>
-          <p id="pendingApplications" class="mt-2 font-['Outfit'] text-3xl font-bold text-supreme-800">—</p>
+          <p class="text-sm font-medium text-slate-500">Registered Accounts</p>
+          <p id="totalUsersCount" class="mt-2 font-['Outfit'] text-3xl font-bold text-supreme-800">—</p>
         </article>
       </div>
+
       <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row">
-          <input id="searchInput" type="search" placeholder="Search applicant name or national ID" class="min-w-0 flex-1 rounded-lg border border-slate-200 px-4 py-2.5 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" />
+          <input id="searchInput" type="search" placeholder="Search applicant name, national ID, or phone..." class="min-w-0 flex-1 rounded-lg border border-slate-200 px-4 py-2.5 outline-none focus:border-supreme-gold focus:ring-4 focus:ring-amber-100" />
           <select id="statusFilter" class="rounded-lg border border-slate-200 bg-white px-4 py-2.5 font-medium text-slate-700 outline-none focus:border-supreme-gold">
             <option value="All">All statuses</option>
             <option value="Pending">Pending</option>
@@ -94,18 +102,8 @@
         </div>
         <div id="tableMessage" class="hidden px-5 py-4 text-sm font-medium" role="status"></div>
         <div class="overflow-x-auto">
-          <table class="min-w-[960px] w-full text-left text-sm">
-            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th class="px-5 py-4">Applicant</th>
-                <th class="px-5 py-4">National ID / Passport</th>
-                <th class="px-5 py-4">Phone</th>
-                <th class="px-5 py-4">Requested amount</th>
-                <th class="px-5 py-4">Repayment</th>
-                <th class="px-5 py-4">Applied</th>
-                <th class="px-5 py-4">Status</th>
-              </tr>
-            </thead>
+          <table class="min-w-[1100px] w-full text-left text-sm">
+            <thead id="tableHead" class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"></thead>
             <tbody id="applicationsBody" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
@@ -118,7 +116,10 @@
     const storageKey = 'supreme_credit_admin_token';
     const money = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 });
     const date = new Intl.DateTimeFormat('en-KE', { dateStyle: 'medium', timeStyle: 'short' });
+    
     let applications = [];
+    let registeredUsers = [];
+    let currentTab = 'applications';
 
     const byId = id => document.getElementById(id);
     const authHeaders = () => ({
@@ -136,67 +137,149 @@
       element.className = `px-5 py-4 text-sm font-medium ${isError ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`;
     }
 
-    function visibleApplications() {
-      const query = byId('searchInput').value.trim().toLowerCase();
-      const status = byId('statusFilter').value;
-      return applications.filter(item => {
-        const itemStatus = item.status || 'Pending';
-        const name = String(item.applicant_name || item.full_name || '').toLowerCase();
-        const idNum = String(item.id_number || '').toLowerCase();
-        return (status === 'All' || itemStatus === status) && (!query || name.includes(query) || idNum.includes(query));
-      });
+    function renderTableHead() {
+      if (currentTab === 'applications') {
+        byId('tableHead').innerHTML = `
+          <tr>
+            <th class="px-5 py-4">Photo</th>
+            <th class="px-5 py-4">Applicant Details</th>
+            <th class="px-5 py-4">National ID</th>
+            <th class="px-5 py-4">Uploaded Documents</th>
+            <th class="px-5 py-4">Requested Amount</th>
+            <th class="px-5 py-4">Repayment</th>
+            <th class="px-5 py-4">Status</th>
+          </tr>`;
+        byId('statusFilter').classList.remove('hidden');
+      } else {
+        byId('tableHead').innerHTML = `
+          <tr>
+            <th class="px-5 py-4">Profile Photo</th>
+            <th class="px-5 py-4">Registered Name</th>
+            <th class="px-5 py-4">Phone Number</th>
+            <th class="px-5 py-4">National ID</th>
+            <th class="px-5 py-4">ID Scans (Supabase Uploads)</th>
+            <th class="px-5 py-4">Registration Date</th>
+          </tr>`;
+        byId('statusFilter').classList.add('hidden');
+      }
     }
 
     function render() {
-      const filtered = visibleApplications();
-      byId('applicationsBody').innerHTML = filtered.length ? filtered.map(item => {
-        const appId = item.application_id || item.id;
-        const name = item.applicant_name || item.full_name || 'N/A';
-        const amount = item.loan_amount || item.loan_requested || 0;
-        const period = item.repayment_period || item.repayment_period_days || '—';
-        const itemStatus = item.status || 'Pending';
-        const createdAt = item.created_at ? date.format(new Date(item.created_at)) : '—';
+      renderTableHead();
+      const query = byId('searchInput').value.trim().toLowerCase();
 
-        return `<tr>
-          <td class="px-5 py-4"><p class="font-bold text-supreme-950">${escapeHtml(name)}</p><p class="text-xs text-slate-500">ID: ${escapeHtml(appId)}</p></td>
-          <td class="px-5 py-4">${escapeHtml(item.id_number)}</td>
-          <td class="px-5 py-4">${escapeHtml(item.phone_number)}</td>
-          <td class="px-5 py-4 font-bold text-supreme-800">${money.format(amount)}</td>
-          <td class="px-5 py-4">${escapeHtml(period)}</td>
-          <td class="px-5 py-4">${createdAt}</td>
-          <td class="px-5 py-4">
-            <label class="sr-only" for="status-${appId}">Update ${escapeHtml(name)} status</label>
-            <select id="status-${appId}" data-id="${appId}" class="rounded-full border-0 px-3 py-2 text-xs font-bold ${statusClasses[itemStatus] || statusClasses.Pending}">
-              ${['Pending', 'Approved', 'Rejected'].map(st => `<option ${st === itemStatus ? 'selected' : ''}>${st}</option>`).join('')}
-            </select>
-          </td>
-        </tr>`;
-      }).join('') : '<tr><td colspan="7" class="px-5 py-12 text-center text-slate-500">No applications match your search.</td></tr>';
+      if (currentTab === 'applications') {
+        const status = byId('statusFilter').value;
+        const filtered = applications.filter(item => {
+          const itemStatus = item.status || 'Pending';
+          const name = String(item.applicant_name || '').toLowerCase();
+          const idNum = String(item.id_number || '').toLowerCase();
+          const phone = String(item.phone_number || '').toLowerCase();
+          return (status === 'All' || itemStatus === status) && (!query || name.includes(query) || idNum.includes(query) || phone.includes(query));
+        });
 
-      document.querySelectorAll('[data-id]').forEach(select => select.addEventListener('change', updateStatus));
+        byId('applicationsBody').innerHTML = filtered.length ? filtered.map(item => {
+          const appId = item.application_id || item.id;
+          const name = item.applicant_name || 'N/A';
+          const idNum = item.id_number || 'N/A';
+          const phone = item.phone_number || 'N/A';
+          const amount = item.loan_amount || 0;
+          const period = item.repayment_period || '—';
+          const itemStatus = item.status || 'Pending';
+          const createdAt = item.created_at ? date.format(new Date(item.created_at)) : '—';
+          
+          const profilePic = item.profile_pic_url;
+          const idFront = item.id_front_url;
+          const idBack = item.id_back_url;
+
+          return `<tr>
+            <td class="px-5 py-4">
+              ${profilePic 
+                ? `<a href="${escapeHtml(profilePic)}" target="_blank"><img src="${escapeHtml(profilePic)}" class="h-10 w-10 rounded-full object-cover border border-slate-200" /></a>` 
+                : `<div class="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-500 font-bold">N/A</div>`}
+            </td>
+            <td class="px-5 py-4">
+              <p class="font-bold text-supreme-950">${escapeHtml(name)}</p>
+              <p class="text-xs text-slate-500">${escapeHtml(phone)}</p>
+              <p class="text-[10px] text-slate-400">Date: ${createdAt}</p>
+            </td>
+            <td class="px-5 py-4 font-semibold text-slate-700">${escapeHtml(idNum)}</td>
+            <td class="px-5 py-4 text-xs">
+              <div class="flex flex-col gap-1">
+                ${idFront ? `<a href="${escapeHtml(idFront)}" target="_blank" class="font-bold text-supreme-800 hover:text-supreme-gold underline">📄 ID Front Scan</a>` : `<span class="text-slate-400">ID Front: Missing</span>`}
+                ${idBack ? `<a href="${escapeHtml(idBack)}" target="_blank" class="font-bold text-supreme-800 hover:text-supreme-gold underline">📄 ID Back Scan</a>` : `<span class="text-slate-400">ID Back: Missing</span>`}
+              </div>
+            </td>
+            <td class="px-5 py-4 font-bold text-supreme-800">${money.format(amount)}</td>
+            <td class="px-5 py-4">${escapeHtml(period)}</td>
+            <td class="px-5 py-4">
+              <select data-id="${appId}" class="rounded-full border-0 px-3 py-2 text-xs font-bold ${statusClasses[itemStatus] || statusClasses.Pending}">
+                ${['Pending', 'Approved', 'Rejected'].map(st => `<option ${st === itemStatus ? 'selected' : ''}>${st}</option>`).join('')}
+              </select>
+            </td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="7" class="px-5 py-12 text-center text-slate-500">No loan applications found.</td></tr>';
+
+        document.querySelectorAll('[data-id]').forEach(select => select.addEventListener('change', updateStatus));
+      } else {
+        const filtered = registeredUsers.filter(u => {
+          const name = String(u.full_name || '').toLowerCase();
+          const idNum = String(u.national_id || '').toLowerCase();
+          const phone = String(u.phone || '').toLowerCase();
+          return !query || name.includes(query) || idNum.includes(query) || phone.includes(query);
+        });
+
+        byId('applicationsBody').innerHTML = filtered.length ? filtered.map(u => {
+          const createdAt = u.created_at ? date.format(new Date(u.created_at)) : '—';
+          return `<tr>
+            <td class="px-5 py-4">
+              ${u.profile_pic_url 
+                ? `<a href="${escapeHtml(u.profile_pic_url)}" target="_blank"><img src="${escapeHtml(u.profile_pic_url)}" class="h-10 w-10 rounded-full object-cover border border-slate-200" /></a>` 
+                : `<div class="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-500 font-bold">N/A</div>`}
+            </td>
+            <td class="px-5 py-4 font-bold text-supreme-950">${escapeHtml(u.full_name)}</td>
+            <td class="px-5 py-4 font-medium text-slate-700">${escapeHtml(u.phone)}</td>
+            <td class="px-5 py-4 font-semibold text-slate-700">${escapeHtml(u.national_id)}</td>
+            <td class="px-5 py-4 text-xs">
+              <div class="flex flex-col gap-1">
+                ${u.id_front_url ? `<a href="${escapeHtml(u.id_front_url)}" target="_blank" class="font-bold text-supreme-800 hover:text-supreme-gold underline">📄 View ID Front</a>` : `<span class="text-slate-400">ID Front Missing</span>`}
+                ${u.id_back_url ? `<a href="${escapeHtml(u.id_back_url)}" target="_blank" class="font-bold text-supreme-800 hover:text-supreme-gold underline">📄 View ID Back</a>` : `<span class="text-slate-400">ID Back Missing</span>`}
+              </div>
+            </td>
+            <td class="px-5 py-4 text-xs text-slate-500">${createdAt}</td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="6" class="px-5 py-12 text-center text-slate-500">No registered users found.</td></tr>';
+      }
     }
 
     function renderStats() {
       const approved = applications.filter(item => item.status === 'Approved');
       byId('totalApplications').textContent = applications.length.toLocaleString('en-KE');
-      byId('totalApproved').textContent = money.format(approved.reduce((total, item) => total + Number(item.loan_amount || item.loan_requested || 0), 0));
-      byId('pendingApplications').textContent = applications.filter(item => (item.status || 'Pending') === 'Pending').length.toLocaleString('en-KE');
+      byId('totalApproved').textContent = money.format(approved.reduce((total, item) => total + Number(item.loan_amount || 0), 0));
+      byId('totalUsersCount').textContent = registeredUsers.length.toLocaleString('en-KE');
     }
 
-    async function loadApplications() {
-      showMessage('Loading applications…');
+    async function loadAllData() {
+      showMessage('Syncing latest records…');
       try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/applications`, { headers: authHeaders() });
-        if (response.status === 401) throw new Error('Unauthorized');
-        if (!response.ok) throw new Error('Unable to load applications');
-        const body = await response.json();
-        
-        applications = body.data || body.applications || [];
+        const appRes = await fetch(`${API_BASE_URL}/api/admin/applications`, { headers: authHeaders() });
+        if (appRes.status === 401) throw new Error('Unauthorized');
+        if (appRes.ok) {
+          const appBody = await appRes.json();
+          applications = appBody.data || [];
+        }
+
+        const userRes = await fetch(`${API_BASE_URL}/api/admin/users`, { headers: authHeaders() });
+        if (userRes.ok) {
+          const userBody = await userRes.json();
+          registeredUsers = userBody.data || [];
+        }
+
         byId('tableMessage').classList.add('hidden');
         renderStats();
         render();
       } catch (error) {
-        showMessage(error.message === 'Unauthorized' ? 'Your session is not authorized. Sign in again.' : 'Could not load applications. Check the API URL and your network connection.', true);
+        showMessage(error.message === 'Unauthorized' ? 'Your session is not authorized.' : 'Could not load data from backend.', true);
       }
     }
 
@@ -213,32 +296,40 @@
           body: JSON.stringify({ status: select.value })
         });
         if (!response.ok) throw new Error('Update failed');
-        const body = await response.json();
-        const updatedItem = body.data || body.application;
-
-        applications = applications.map(item => String(item.application_id || item.id) === String(appId) ? { ...item, ...updatedItem, status: select.value } : item);
+        
+        applications = applications.map(item => String(item.application_id || item.id) === String(appId) ? { ...item, status: select.value } : item);
         renderStats();
         render();
-        showMessage('Application status updated.');
+        showMessage('Status updated successfully.');
       } catch {
         select.value = previous;
-        showMessage('Could not update status. Please try again.', true);
+        showMessage('Could not update status.', true);
         select.disabled = false;
       }
     }
 
-    function openDashboard() {
-      byId('loginView').classList.add('hidden');
-      byId('dashboardView').classList.remove('hidden');
-      loadApplications();
-    }
+    byId('tabApplications').addEventListener('click', () => {
+      currentTab = 'applications';
+      byId('tabApplications').className = 'pb-3 text-sm font-bold text-supreme-800 border-b-2 border-supreme-800';
+      byId('tabUsers').className = 'pb-3 text-sm font-bold text-slate-500 hover:text-supreme-800';
+      render();
+    });
+
+    byId('tabUsers').addEventListener('click', () => {
+      currentTab = 'users';
+      byId('tabUsers').className = 'pb-3 text-sm font-bold text-supreme-800 border-b-2 border-supreme-800';
+      byId('tabApplications').className = 'pb-3 text-sm font-bold text-slate-500 hover:text-supreme-800';
+      render();
+    });
 
     byId('loginForm').addEventListener('submit', event => {
       event.preventDefault();
       const token = byId('accessToken').value.trim();
       if (!token) return;
       localStorage.setItem(storageKey, token);
-      openDashboard();
+      byId('loginView').classList.add('hidden');
+      byId('dashboardView').classList.remove('hidden');
+      loadAllData();
     });
 
     byId('logoutButton').addEventListener('click', () => {
@@ -248,11 +339,15 @@
       byId('accessToken').value = '';
     });
 
-    byId('refreshButton').addEventListener('click', loadApplications);
+    byId('refreshButton').addEventListener('click', loadAllData);
     byId('searchInput').addEventListener('input', render);
     byId('statusFilter').addEventListener('change', render);
 
-    if (localStorage.getItem(storageKey)) openDashboard();
+    if (localStorage.getItem(storageKey)) {
+      byId('loginView').classList.add('hidden');
+      byId('dashboardView').classList.remove('hidden');
+      loadAllData();
+    }
   </script>
 </body>
 </html>
