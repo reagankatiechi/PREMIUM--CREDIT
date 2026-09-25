@@ -274,6 +274,44 @@ app.get('/api/admin/users', verifyAdminToken, async (req, res) => {
   }
 });
 
+// Admin Reset User Password
+app.patch('/api/admin/users/:id/reset-password', verifyAdminToken, async (req, res) => {
+  const { id } = req.params;
+  const { newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 4) {
+    return res.status(400).json({ success: false, message: 'Password must be at least 4 characters long.' });
+  }
+
+  try {
+    if (!supabase) {
+      return res.status(500).json({ success: false, error: 'Supabase client is not configured.' });
+    }
+
+    // Hash the new password using bcrypt
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Update the password_hash in Supabase
+    const { data, error } = await supabase
+      .from('users')
+      .update({ password_hash: passwordHash })
+      .eq('id', id)
+      .select();
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ success: false, message: 'User record not found.' });
+    }
+
+    res.json({ success: true, message: 'Password updated successfully.' });
+  } catch (err) {
+    console.error('Password Reset Error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // PATCH Status Route with Automated SMS Trigger
 app.patch('/api/admin/applications/:id', verifyAdminToken, async (req, res) => {
   const { id } = req.params;

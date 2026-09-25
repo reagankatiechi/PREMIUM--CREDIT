@@ -159,6 +159,7 @@
             <th class="px-5 py-4">National ID</th>
             <th class="px-5 py-4">ID Scans (Supabase Uploads)</th>
             <th class="px-5 py-4">Registration Date</th>
+            <th class="px-5 py-4">Actions</th>
           </tr>`;
         byId('statusFilter').classList.add('hidden');
       }
@@ -247,8 +248,13 @@
               </div>
             </td>
             <td class="px-5 py-4 text-xs text-slate-500">${createdAt}</td>
+            <td class="px-5 py-4">
+              <button onclick="resetUserPassword('${u.id}', '${escapeHtml(u.full_name)}')" class="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600 transition">
+                Reset Password
+              </button>
+            </td>
           </tr>`;
-        }).join('') : '<tr><td colspan="6" class="px-5 py-12 text-center text-slate-500">No registered users found.</td></tr>';
+        }).join('') : '<tr><td colspan="7" class="px-5 py-12 text-center text-slate-500">No registered users found.</td></tr>';
       }
     }
 
@@ -280,6 +286,26 @@
         render();
       } catch (error) {
         showMessage(error.message === 'Unauthorized' ? 'Your session is not authorized.' : 'Could not load data from backend.', true);
+      }
+    }
+
+    async function resetUserPassword(userId, userName) {
+      const newPassword = prompt(`Enter a new password for ${userName}:`);
+      if (!newPassword) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(userId)}/reset-password`, {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify({ newPassword })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to update password');
+
+        alert(`Password for ${userName} has been changed successfully!`);
+      } catch (err) {
+        alert(`Error: ${err.message}`);
       }
     }
 
