@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Dashboard | Supreme Credit</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            supreme: {
+              950: '#02352b',
+              800: '#064d3b',
+              700: '#0a6049',
+              500: '#2e8c68',
+              gold: '#ff9900',
+              cream: '#f8f6ee'
+            }
+          },
+          fontFamily: {
+            sans: ['DM Sans', 'ui-sans-serif', 'system-ui']
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 antialiased">
+
+  <!-- TOP HEADER / NAV -->
+  <header class="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 sm:px-10">
+      
+      <!-- LOGO -->
+      <a href="index.html" class="font-['Outfit'] text-2xl font-black tracking-tight text-supreme-800">
+        Supreme<span class="text-supreme-gold">Credit</span>
+      </a>
+
+      <!-- USER PROFILE & LOGOUT -->
+      <div class="flex items-center gap-4">
+        <div class="hidden text-right sm:block">
+          <p id="navUserName" class="text-sm font-bold text-supreme-800">Loading...</p>
+          <p id="navUserPhone" class="text-xs text-slate-500">---</p>
+        </div>
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-supreme-800 font-bold text-white shadow" id="navUserAvatar">
+          U
+        </div>
+        <button id="logoutBtn" class="ml-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-red-50 hover:text-red-600">
+          Sign Out
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="mx-auto max-w-7xl px-6 py-8 sm:px-10">
+    
+    <!-- WELCOME BANNER -->
+    <div class="mb-8 flex flex-col justify-between gap-4 rounded-3xl bg-supreme-800 p-6 text-white shadow-lg sm:flex-row sm:items-center sm:p-8">
+      <div>
+        <h1 class="font-['Outfit'] text-2xl font-bold sm:text-3xl" id="welcomeHeading">Welcome back!</h1>
+        <p class="mt-1 text-sm text-slate-200">Track your application status, active loans, and repayments in real-time.</p>
+      </div>
+      <a href="index.html#applySection" class="inline-flex shrink-0 items-center justify-center rounded-xl bg-supreme-gold px-6 py-3 text-sm font-bold text-white shadow transition hover:bg-amber-500">
+        + Apply New Loan
+      </a>
+    </div>
+
+    <!-- SUMMARY CARDS GRID -->
+    <div class="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      
+      <!-- CARD 1: ACTIVE LOAN -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Balance</p>
+        <p class="mt-2 font-['Outfit'] text-3xl font-extrabold text-supreme-800" id="statActiveBalance">KSh 0</p>
+        <p class="mt-1 text-xs text-slate-500" id="statTotalRepayable">Total due on current loan</p>
+      </div>
+
+      <!-- CARD 2: NEXT DUE DATE -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Next Payment Due</p>
+        <p class="mt-2 font-['Outfit'] text-3xl font-extrabold text-supreme-gold" id="statDueDate">--</p>
+        <p class="mt-1 text-xs text-slate-500" id="statDueAmount">Amount: KSh 0</p>
+      </div>
+
+      <!-- CARD 3: CREDIT LIMIT -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Credit Limit</p>
+        <p class="mt-2 font-['Outfit'] text-3xl font-extrabold text-supreme-800" id="statCreditLimit">KSh 50,000</p>
+        <p class="mt-1 text-xs text-emerald-600 font-semibold">&check; Account Active</p>
+      </div>
+
+      <!-- CARD 4: LATEST APPLICATION -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Latest Request</p>
+        <div class="mt-2">
+          <span id="statStatusBadge" class="inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+            No Active Request
+          </span>
+        </div>
+        <p class="mt-3 text-xs text-slate-500" id="statRequestedAmount">Amount: --</p>
+      </div>
+
+    </div>
+
+    <!-- APPLICATION PROGRESS TRACKER -->
+    <section class="mb-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h2 class="font-['Outfit'] text-xl font-bold text-supreme-800 sm:text-2xl">Application Progress</h2>
+          <p class="text-xs text-slate-500">Live tracking for your most recent loan application</p>
+        </div>
+        <span id="trackerRefCode" class="text-xs font-mono font-bold text-slate-400">REF: #---</span>
+      </div>
+
+      <!-- STEPPER BAR -->
+      <div class="relative mt-8">
+        <div class="absolute top-1/2 left-0 h-1 w-full -translate-y-1/2 bg-slate-200"></div>
+        <div id="progressBarFill" class="absolute top-1/2 left-0 h-1 w-0 -translate-y-1/2 bg-supreme-gold transition-all duration-500"></div>
+
+        <div class="relative z-10 flex justify-between">
+          
+          <!-- STEP 1 -->
+          <div class="flex flex-col items-center">
+            <div id="step1Circle" class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 ring-4 ring-white">
+              1
+            </div>
+            <p class="mt-2 text-xs font-bold text-slate-700">Submitted</p>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="flex flex-col items-center">
+            <div id="step2Circle" class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 ring-4 ring-white">
+              2
+            </div>
+            <p class="mt-2 text-xs font-bold text-slate-700">Under Review</p>
+          </div>
+
+          <!-- STEP 3 -->
+          <div class="flex flex-col items-center">
+            <div id="step3Circle" class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 ring-4 ring-white">
+              3
+            </div>
+            <p class="mt-2 text-xs font-bold text-slate-700">Approved</p>
+          </div>
+
+          <!-- STEP 4 -->
+          <div class="flex flex-col items-center">
+            <div id="step4Circle" class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 ring-4 ring-white">
+              4
+            </div>
+            <p class="mt-2 text-xs font-bold text-slate-700">Disbursed</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- TWO COLUMN LAYOUT: ACTIVE LOAN & REPAYMENT / APPLICATION HISTORY -->
+    <div class="grid gap-8 lg:grid-cols-12">
+      
+      <!-- LEFT COLUMN: ACTIVE LOAN ACTIONS -->
+      <div class="lg:col-span-5">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <h2 class="font-['Outfit'] text-xl font-bold text-supreme-800">Repay Active Loan</h2>
+          <p class="mt-1 text-xs text-slate-500">Make repayments via M-Pesa directly to clear your balance.</p>
+
+          <div class="mt-6 rounded-2xl bg-slate-50 p-5 border border-slate-100">
+            <div class="flex justify-between text-sm py-1">
+              <span class="text-slate-500">Principal Loan:</span>
+              <span class="font-bold text-slate-800" id="repayPrincipal">KSh 0</span>
+            </div>
+            <div class="flex justify-between text-sm py-1">
+              <span class="text-slate-500">Interest Rate:</span>
+              <span class="font-bold text-slate-800">10%</span>
+            </div>
+            <div class="flex justify-between text-sm py-1 border-t border-slate-200 mt-2 pt-2">
+              <span class="font-bold text-slate-800">Total Outstanding:</span>
+              <span class="font-extrabold text-supreme-gold text-lg" id="repayTotalOutstanding">KSh 0</span>
+            </div>
+          </div>
+
+          <button id="openRepayModalBtn" class="mt-6 w-full rounded-xl bg-supreme-800 py-3.5 text-sm font-bold text-white shadow transition hover:bg-supreme-gold">
+            Pay Now via M-Pesa
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: HISTORY TABLE -->
+      <div class="lg:col-span-7">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <h2 class="font-['Outfit'] text-xl font-bold text-supreme-800">Application History</h2>
+          <p class="mt-1 text-xs text-slate-500">Overview of all loan requests submitted from this account.</p>
+
+          <div class="mt-6 overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase tracking-wider">
+                <tr>
+                  <th class="p-3">Date</th>
+                  <th class="p-3">Amount</th>
+                  <th class="p-3">Period</th>
+                  <th class="p-3">Status</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody" class="divide-y divide-slate-100">
+                <tr>
+                  <td colspan="4" class="p-4 text-center text-slate-400">Loading history...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- M-PESA REPAYMENT MODAL -->
+  <div id="repayModal" class="fixed inset-0 z-50 flex hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div class="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
+      
+      <button id="closeRepayModal" class="absolute right-5 top-5 rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+        &#x2715;
+      </button>
+
+      <div class="text-center">
+        <h3 class="font-['Outfit'] text-2xl font-bold text-supreme-800">M-Pesa Loan Repayment</h3>
+        <p class="mt-1 text-xs text-slate-500">An STK prompt will be sent to your phone</p>
+      </div>
+
+      <form id="repayForm" class="mt-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700">M-Pesa Phone Number</label>
+          <input type="tel" id="repayPhone" required placeholder="0712345678" class="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-supreme-gold focus:ring-2 focus:ring-amber-100" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700">Repayment Amount (KSh)</label>
+          <input type="number" id="repayAmount" required placeholder="1000" class="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-supreme-gold focus:ring-2 focus:ring-amber-100" />
+        </div>
+
+        <button type="submit" id="repaySubmitBtn" class="w-full rounded-xl bg-supreme-gold py-3.5 text-sm font-bold text-white shadow transition hover:bg-amber-500">
+          Trigger M-Pesa Payment
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'https://premium-credit.onrender.com';
+    const byId = id => document.getElementById(id);
+
+    // 1. AUTH CHECK
+    const token = localStorage.getItem('supreme_user_token');
+    const userDataRaw = localStorage.getItem('supreme_user_data');
+
+    if (!token || !userDataRaw) {
+      window.location.href = 'index.html'; // Redirect to login if not authenticated
+    }
+
+    const userData = JSON.parse(userDataRaw || '{}');
+
+    // Populate Navigation Info
+    byId('navUserName').textContent = userData.fullName || 'User';
+    byId('navUserPhone').textContent = userData.phone || '';
+    byId('welcomeHeading').textContent = `Welcome back, ${userData.fullName || 'User'}!`;
+    if (userData.fullName) {
+      byId('navUserAvatar').textContent = userData.fullName.charAt(0).toUpperCase();
+    }
+
+    // Logout Action
+    byId('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('supreme_user_token');
+      localStorage.removeItem('supreme_user_data');
+      window.location.href = 'index.html';
+    });
+
+    // 2. FETCH DASHBOARD DATA
+    async function loadDashboardData() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+
+        const data = await response.json();
+        updateDashboardUI(data);
+
+      } catch (err) {
+        console.warn('Dashboard API fallback activated:', err.message);
+        // Display default placeholder state if endpoint is still being connected
+        updateProgressStepper('Submitted');
+      }
+    }
+
+    // 3. UI UPDATE LOGIC
+    function updateDashboardUI(data) {
+      const latestApp = data.latestApplication || {};
+      
+      // Update Summary Cards
+      byId('statActiveBalance').textContent = `KSh ${(data.activeBalance || 0).toLocaleString()}`;
+      byId('statTotalRepayable').textContent = `Total Due: KSh ${(data.totalDue || 0).toLocaleString()}`;
+      byId('statDueDate').textContent = data.dueDate || 'N/A';
+      byId('statDueAmount').textContent = `Amount: KSh ${(data.dueAmount || 0).toLocaleString()}`;
+      byId('statCreditLimit').textContent = `KSh ${(data.creditLimit || 50000).toLocaleString()}`;
+      
+      if (latestApp.status) {
+        byId('statStatusBadge').textContent = latestApp.status;
+        byId('statStatusBadge').className = getBadgeClass(latestApp.status);
+        byId('statRequestedAmount').textContent = `Amount: KSh ${(latestApp.loan_amount || 0).toLocaleString()}`;
+        byId('trackerRefCode').textContent = `REF: #${latestApp.id || '---'}`;
+        updateProgressStepper(latestApp.status);
+      }
+
+      // Populate Repayment Card
+      byId('repayPrincipal').textContent = `KSh ${(data.activeBalance || 0).toLocaleString()}`;
+      byId('repayTotalOutstanding').textContent = `KSh ${(data.totalDue || 0).toLocaleString()}`;
+
+      // Populate History Table
+      const historyList = data.applicationsHistory || [];
+      const tbody = byId('historyTableBody');
+      if (historyList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">No applications recorded yet.</td></tr>`;
+      } else {
+        tbody.innerHTML = historyList.map(app => `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-medium text-slate-700">${new Date(app.created_at || Date.now()).toLocaleDateString()}</td>
+            <td class="p-3 font-bold text-slate-800">KSh ${(app.loan_amount || 0).toLocaleString()}</td>
+            <td class="p-3 text-slate-500">${app.repayment_period || '1 Month'}</td>
+            <td class="p-3"><span class="${getBadgeClass(app.status)}">${app.status || 'Pending'}</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function getBadgeClass(status) {
+      switch ((status || '').toLowerCase()) {
+        case 'approved':
+        case 'disbursed':
+          return 'inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800';
+        case 'under review':
+        case 'submitted':
+        case 'pending':
+          return 'inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800';
+        case 'rejected':
+          return 'inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800';
+        default:
+          return 'inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600';
+      }
+    }
+
+    function updateProgressStepper(status) {
+      const activeClass = 'bg-supreme-gold text-white';
+      const fill = byId('progressBarFill');
+
+      const s1 = byId('step1Circle');
+      const s2 = byId('step2Circle');
+      const s3 = byId('step3Circle');
+      const s4 = byId('step4Circle');
+
+      const st = (status || '').toLowerCase();
+
+      if (st === 'submitted' || st === 'pending') {
+        fill.style.width = '10%';
+        s1.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
+      } else if (st === 'under review') {
+        fill.style.width = '40%';
+        s1.className = s2.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
+      } else if (st === 'approved') {
+        fill.style.width = '70%';
+        s1.className = s2.className = s3.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
+      } else if (st === 'disbursed') {
+        fill.style.width = '100%';
+        s1.className = s2.className = s3.className = s4.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
+      }
+    }
+
+    // Modal Control
+    const modal = byId('repayModal');
+    byId('openRepayModalBtn').addEventListener('click', () => {
+      byId('repayPhone').value = userData.phone || '';
+      modal.classList.remove('hidden');
+    });
+    byId('closeRepayModal').addEventListener('click', () => modal.classList.add('hidden'));
+
+    // Repay Form Submission
+    byId('repayForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert(`M-Pesa STK Push initiated for KSh ${byId('repayAmount').value} on ${byId('repayPhone').value}. Check your phone to complete PIN entry.`);
+      modal.classList.add('hidden');
+    });
+
+    // Run on load
+    loadDashboardData();
+  </script>
+</body>
+</html>

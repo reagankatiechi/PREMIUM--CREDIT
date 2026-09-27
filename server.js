@@ -127,6 +127,7 @@ app.get('/', (req, res) => {
 
 // ---------------- AUTH ROUTES ----------------
 
+
 // USER REGISTRATION (With Image Uploads)
 app.post('/api/auth/register', upload.fields([
   { name: 'profilePic', maxCount: 1 },
@@ -137,14 +138,18 @@ app.post('/api/auth/register', upload.fields([
   const files = req.files;
 
   if (!fullName || !nationalId || !phone || !password) {
-    return res.status(400).json({ message: 'All text fields are required.' });
+    return res.status(400).json({ success: false, message: 'All text fields are required.' });
   }
 
   if (!files || !files.profilePic || !files.idFront || !files.idBack) {
-    return res.status(400).json({ message: 'Profile picture, ID Front, and ID Back images are required.' });
+    return res.status(400).json({ success: false, message: 'Profile picture, ID Front, and ID Back images are required.' });
   }
 
   try {
+    if (!supabase) {
+      return res.status(500).json({ success: false, message: 'Supabase client is not configured on the server.' });
+    }
+
     const formattedPhone = formatKenyanPhone(phone);
 
     // Hash password
@@ -172,19 +177,19 @@ app.post('/api/auth/register', upload.fields([
       ]);
 
     if (error) {
+      console.error('Supabase DB Insert Error:', error);
       if (error.code === '23505') {
-        return res.status(400).json({ message: 'Phone number or National ID is already registered.' });
+        return res.status(400).json({ success: false, message: 'Phone number or National ID is already registered.' });
       }
-      throw error;
+      return res.status(400).json({ success: false, message: error.message || 'Database error during registration.' });
     }
 
-    res.status(201).json({ success: true, message: 'Account registered successfully.' });
+    return res.status(201).json({ success: true, message: 'Account registered successfully.' });
   } catch (err) {
     console.error('Registration Error:', err);
-    res.status(500).json({ message: err.message || 'Internal server error during registration.' });
+    return res.status(500).json({ success: false, message: err.message || 'Internal server error during registration.' });
   }
 });
-
 // USER LOGIN
 app.post('/api/auth/login', async (req, res) => {
   const { phone, password } = req.body;
@@ -380,7 +385,106 @@ app.post('/api/applications', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const db = require('../db'); // Your database connection pool or instance
 
+// -------------------------------------------------------------
+// JWT AUTHENTICATION MIDDLEWARE
+// -------------------------------------------------------------
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Extract token from "Bearer <TOKEN>"
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access denied. No token provided.' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'your_fallback_secret_key', (err, decodedUser) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token.' });
+    }
+    req.user = decodedUser; // Contains user ID, phone, etc.
+    next();
+  });
+}
+
+// -------------------------------------------------------------
+// GET /api/user/dashboard
+// -------------------------------------------------------------
+router.get('/api/user/dashboard', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const userPhone = req.user.phone;
+
+    // 1. Fetch user's loan applications history
+    // Querying by user_id or matching phone_number
+    const historyQuery = `
+      SELECT id, applicant_name, loan_amount, repayment_period, status, created_at
+      FROM loan_applications
+      WHERE user_id = $1 OR phone_number = $2
+      ORDER BY created_at DESC
+    `;
+    const historyResult = await db.query(historyQuery, [userId, userPhone]);
+    const applicationsHistory = historyResult.rows || [];
+
+    // 2. Identify the most recent application
+    const latestApplication = applicationsHistory.length > 0 ? applicationsHistory[0] : null;
+
+    // 3. Check for active/approved/disbursed loans to compute metrics
+    let activeBalance = 0;
+    let totalDue = 0;
+    let dueDate = 'N/A';
+    let dueAmount = 0;
+
+    const activeLoanQuery = `
+      SELECT loan_amount, created_at, repayment_period
+      FROM loan_applications
+      WHERE (user_id = $1 OR phone_number = $2)
+        AND status IN ('Approved', 'Disbursed')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    const activeLoanResult = await db.query(activeLoanQuery, [userId, userPhone]);
+
+    if (activeLoanResult.rows.length > 0) {
+      const activeLoan = activeLoanResult.rows[0];
+      const principal = parseFloat(activeLoan.loan_amount) || 0;
+      const interestRate = 0.10; // 10% interest rate
+      
+      activeBalance = principal;
+      totalDue = principal + (principal * interestRate);
+      dueAmount = totalDue;
+
+      // Calculate due date (30 days from creation by default)
+      const loanDate = new Date(activeLoan.created_at || Date.now());
+      loanDate.setDate(loanDate.getDate() + 30);
+      dueDate = loanDate.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+
+    // 4. Return combined dashboard data structure
+    return res.status(200).json({
+      activeBalance,
+      totalDue,
+      dueDate,
+      dueAmount,
+      creditLimit: 50000,
+      latestApplication,
+      applicationsHistory
+    });
+
+  } catch (error) {
+    console.error('Error in /api/user/dashboard:', error);
+    return res.status(500).json({ error: 'Internal server error while loading dashboard.' });
+  }
+});
+
+module.exports = router;
 // Start Server bound to 0.0.0.0
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
