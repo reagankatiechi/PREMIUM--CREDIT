@@ -388,11 +388,13 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Login failed');
 
-        localStorage.setItem('supremeToken', data.token);
-        showAuthAlert('Login successful!', 'success');
+        localStorage.setItem('supreme_user_token', data.token);
+        localStorage.setItem('supreme_user_data', JSON.stringify(data.user));
+
+        showAuthAlert(`Welcome back, ${data.user.fullName}!, Redirecting...`);
         
         setTimeout(() => {
-          closeAuthModal();
+          window.location.href = 'dashboard.html';
         }, 1000);
 
       } catch (err) {
