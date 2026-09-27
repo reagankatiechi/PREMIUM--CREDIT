@@ -385,10 +385,6 @@ app.post('/api/applications', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-const express = require('express');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
-const db = require('../db'); // Your database connection pool or instance
 
 // -------------------------------------------------------------
 // JWT AUTHENTICATION MIDDLEWARE
@@ -413,22 +409,32 @@ function authenticateToken(req, res, next) {
 // -------------------------------------------------------------
 // GET /api/user/dashboard
 // -------------------------------------------------------------
-router.get('/api/user/dashboard', authenticateToken, async (req, res) => {
+app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id || req.user.userId;
     const userPhone = req.user.phone;
 
-    // 1. Fetch user's loan applications history
-    // Querying by user_id or matching phone_number
-    const historyQuery = `
-      SELECT id, applicant_name, loan_amount, repayment_period, status, created_at
-      FROM loan_applications
-      WHERE user_id = $1 OR phone_number = $2
-      ORDER BY created_at DESC
-    `;
-    const historyResult = await db.query(historyQuery, [userId, userPhone]);
-    const applicationsHistory = historyResult.rows || [];
+    let applicationsHistory = [];
 
+    // Safely query using Supabase or Postgres Pool depending on setup
+    if (typeof supabase !== 'undefined') {
+      const { data, error } = await supabase
+        .from('loan_applications')
+        .select('id, applicant_name, loan_amount, repayment_period, status, created_at')
+        .or(`user_id.eq.${userId},phone_number.eq.${userPhone}`)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) applicationsHistory = data;
+    } else if (typeof pool !== 'undefined') {
+      const historyQuery = `
+        SELECT id, applicant_name, loan_amount, repayment_period, status, created_at
+        FROM loan_applications
+        WHERE user_id = $1 OR phone_number = $2
+        ORDER BY created_at DESC
+      `;
+      const historyResult = await pool.query(historyQuery, [userId, userPhone]);
+      applicationsHistory = historyResult.rows || [];
+    }
     // 2. Identify the most recent application
     const latestApplication = applicationsHistory.length > 0 ? applicationsHistory[0] : null;
 
