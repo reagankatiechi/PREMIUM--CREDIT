@@ -51,7 +51,7 @@
         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-supreme-800 font-bold text-white shadow" id="navUserAvatar">
           U
         </div>
-        <button id="logoutBtn" class="ml-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-red-50 hover:text-red-600">
+        <button id="logoutBtn" clavatarContainerss="ml-2 rounded-xl border border-slconst avatarContainerte-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-red-50 hover:text-red-600">
           Sign Out
         </button>
       </div>
@@ -272,9 +272,16 @@
     byId('navUserName').textContent = userData.fullName || 'User';
     byId('navUserPhone').textContent = userData.phone || '';
     byId('welcomeHeading').textContent = `Welcome back, ${userData.fullName || 'User'}!`;
-    if (userData.fullName) {
-      byId('navUserAvatar').textContent = userData.fullName.charAt(0).toUpperCase();
-    }
+    // Render actual profile photo if available, otherwise default to first letter
+const avatarContainer = byId('navUserAvatar');
+const photoUrl = userData.profilePhoto || userData.avatarUrl || userData.profile_photo || userData.photo;
+
+if (photoUrl) {
+  avatarContainer.innerHTML = `<img src="${photoUrl}" alt="Profile" class="h-full w-full rounded-full object-cover">`;
+  avatarContainer.classList.remove('bg-emerald-800', 'text-white'); // Remove fallback background styling
+} else if (userData.fullName) {
+  avatarContainer.textContent = userData.fullName.charAt(0).toUpperCase();
+}
 
     // Logout Action
     byId('logoutBtn').addEventListener('click', () => {
