@@ -267,14 +267,21 @@
     }
 
     const userData = JSON.parse(userDataRaw || '{}');
+// Populate Navigation Info
+byId('navUserName').textContent = userData.fullName || 'User';
+byId('navUserPhone').textContent = userData.phone || '';
+byId('welcomeHeading').textContent = `Welcome back, ${userData.fullName || 'User'}!`;
 
-    // Populate Navigation Info
-    byId('navUserName').textContent = userData.fullName || 'User';
-    byId('navUserPhone').textContent = userData.phone || '';
-    byId('welcomeHeading').textContent = `Welcome back, ${userData.fullName || 'User'}!`;
-    // Render actual profile photo if available, otherwise default to first letter
+// Render Profile Picture or Initials Fallback
 const avatarContainer = byId('navUserAvatar');
-const photoUrl = userData.profilePhoto || userData.avatarUrl || userData.profile_photo || userData.photo;
+const photoUrl = userData.profilePic || userData.profilePhoto || userData.avatarUrl || userData.profile_pic_url;
+
+if (photoUrl) {
+  avatarContainer.innerHTML = `<img src="${photoUrl}" alt="Profile" class="w-full h-full rounded-full object-cover">`;
+  avatarContainer.classList.remove('bg-emerald-800', 'text-white'); // Remove initial background styling
+} else if (userData.fullName) {
+  avatarContainer.textContent = userData.fullName.charAt(0).toUpperCase();
+}
 
 if (photoUrl) {
   avatarContainer.innerHTML = `<img src="${photoUrl}" alt="Profile" class="h-full w-full rounded-full object-cover">`;
