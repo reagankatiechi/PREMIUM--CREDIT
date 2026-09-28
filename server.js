@@ -489,7 +489,6 @@ app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router;
 // Start Server bound to 0.0.0.0
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
