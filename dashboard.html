@@ -283,6 +283,55 @@ if (photoUrl) {
   avatarContainer.textContent = userData.fullName.charAt(0).toUpperCase();
 }
 
+
+
+async function loadLatestDashboardData() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+
+    if (data.success && data.applicationsHistory && data.applicationsHistory.length > 0) {
+      // Find the active/latest application
+      const latestApp = data.applicationsHistory[0];
+
+      // 1. Update Status Badge
+      const statusElement = document.getElementById('loanStatusBadge') || document.getElementById('userLoanStatus');
+      if (statusElement) {
+        statusElement.textContent = latestApp.status.toUpperCase();
+        statusElement.className = `status-badge status-${latestApp.status.toLowerCase()}`;
+      }
+
+      // 2. Update Loan Amount / Balance Display
+      const balanceElement = document.getElementById('activeBalanceDisplay') || document.getElementById('userActiveBalance');
+      if (balanceElement) {
+        balanceElement.textContent = `Ksh ${Number(latestApp.loan_amount || 0).toLocaleString()}`;
+      }
+
+      // 3. Enable Pay Now button if status is Approved or Disbursed
+      const payBtn = document.getElementById('payNowBtn');
+      if (payBtn) {
+        if (latestApp.status.toLowerCase() === 'approved' || latestApp.status.toLowerCase() === 'disbursed') {
+          payBtn.removeAttribute('disabled');
+          payBtn.style.display = 'block';
+        } else {
+          payBtn.setAttribute('disabled', 'true');
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load live dashboard status:', err);
+  }
+}
+
+// Trigger live fetch on page load
+loadLatestDashboardData();
 if (photoUrl) {
   avatarContainer.innerHTML = `<img src="${photoUrl}" alt="Profile" class="h-full w-full rounded-full object-cover">`;
   avatarContainer.classList.remove('bg-emerald-800', 'text-white'); // Remove fallback background styling

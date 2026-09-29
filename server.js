@@ -413,91 +413,43 @@ app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
     const userId = req.user.id || req.user.userId;
     const userPhone = req.user.phone;
 
-    let activeBalance = 0;
-    let totalDue = 0;
-    let dueDate = null;
-    let dueAmount = 0;
     let applicationsHistory = [];
+    let activeLoan = null;
 
-    // Safely query using Supabase or Postgres Pool depending on setup
+    // Fetch user applications
     if (typeof supabase !== 'undefined') {
       const { data, error } = await supabase
         .from('loan_applications')
-        .select('id, applicant_name, loan_amount, repayment_period, status, created_at')
+        .select('*')
         .or(`user_id.eq.${userId},phone_number.eq.${userPhone}`)
         .order('created_at', { ascending: false });
 
       if (!error && data) applicationsHistory = data;
     } else if (typeof pool !== 'undefined') {
-      const historyQuery = `
-        SELECT id, applicant_name, loan_amount, repayment_period, status, created_at
-        FROM loan_applications
-        WHERE user_id = $1 OR phone_number = $2
-        ORDER BY created_at DESC
-      `;
-      const historyResult = await pool.query(historyQuery, [userId, userPhone]);
-      applicationsHistory = historyResult.rows || [];
-    }
-    // 2. Identify the most recent application
-    const latestApplication = applicationsHistory.length > 0 ? applicationsHistory[0] : null;
-
-   // 3. Query Active Loan Data
-    let activeLoan = null;
-
-    if (typeof supabase !== 'undefined') {
-      const { data: activeLoans } = await supabase
-        .from('loan_applications')
-        .select('*')
-        .or(`user_id.eq.${userId},phone_number.eq.${userPhone}`)
-        .in('status', ['approved', 'disbursed'])
-        .limit(1);
-
-      if (activeLoans && activeLoans.length > 0) {
-        activeLoan = activeLoans[0];
-      }
-    } else if (typeof pool !== 'undefined') {
-      const activeLoanQuery = `
-        SELECT * FROM loan_applications 
-        WHERE (user_id = $1 OR phone_number = $2) 
-          AND status IN ('approved', 'disbursed') 
-        LIMIT 1
-      `;
-      const activeLoanResult = await pool.query(activeLoanQuery, [userId, userPhone]);
-      if (activeLoanResult.rows.length > 0) {
-        activeLoan = activeLoanResult.rows[0];
-      }
+      const result = await pool.query(
+        'SELECT * FROM loan_applications WHERE user_id = $1 OR phone_number = $2 ORDER BY created_at DESC',
+        [userId, userPhone]
+      );
+      applicationsHistory = result.rows;
     }
 
-    if (activeLoan) {
-      const principal = parseFloat(activeLoan.loan_amount) || 0;
-      const interestRate = 0.10; // 10% interest rate
-
-      activeBalance = principal;
-      totalDue = principal + (principal * interestRate);
-      dueAmount = totalDue;
-
-      const loanDate = new Date(activeLoan.created_at || Date.now());
-      loanDate.setDate(loanDate.getDate() + 30);
-      dueDate = loanDate.toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
+    // Find the latest active/approved application
+    if (applicationsHistory.length > 0) {
+      activeLoan = applicationsHistory.find(
+        app => app.status.toLowerCase() === 'approved' || app.status.toLowerCase() === 'disbursed'
+      ) || applicationsHistory[0]; // fallback to most recent
     }
-    // 4. Return combined dashboard data structure
-    return res.status(200).json({
-      activeBalance,
-      totalDue,
-      dueDate,
-      dueAmount,
-      creditLimit: 50000,
-      latestApplication,
+
+    res.json({
+      success: true,
+      loanStatus: activeLoan ? activeLoan.status : 'No Application',
+      activeBalance: activeLoan && activeLoan.status.toLowerCase() === 'approved' ? activeLoan.loan_amount : 0,
       applicationsHistory
     });
 
   } catch (error) {
-    console.error('Error in /api/user/dashboard:', error);
-    return res.status(500).json({ error: 'Internal server error while loading dashboard.' });
+    console.error('Error fetching dashboard data:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard data' });
   }
 });
 
