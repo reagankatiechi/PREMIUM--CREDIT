@@ -437,32 +437,41 @@ app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
     // 2. Identify the most recent application
     const latestApplication = applicationsHistory.length > 0 ? applicationsHistory[0] : null;
 
-    // 3. Check for active/approved/disbursed loans to compute metrics
-    let activeBalance = 0;
-    let totalDue = 0;
-    let dueDate = 'N/A';
-    let dueAmount = 0;
+   // 3. Query Active Loan Data
+    let activeLoan = null;
 
-    const activeLoanQuery = `
-      SELECT loan_amount, created_at, repayment_period
-      FROM loan_applications
-      WHERE (user_id = $1 OR phone_number = $2)
-        AND status IN ('Approved', 'Disbursed')
-      ORDER BY created_at DESC
-      LIMIT 1
-    `;
-    const activeLoanResult = await db.query(activeLoanQuery, [userId, userPhone]);
+    if (typeof supabase !== 'undefined') {
+      const { data: activeLoans } = await supabase
+        .from('loan_applications')
+        .select('*')
+        .or(`user_id.eq.${userId},phone_number.eq.${userPhone}`)
+        .in('status', ['approved', 'disbursed'])
+        .limit(1);
 
-    if (activeLoanResult.rows.length > 0) {
-      const activeLoan = activeLoanResult.rows[0];
+      if (activeLoans && activeLoans.length > 0) {
+        activeLoan = activeLoans[0];
+      }
+    } else if (typeof pool !== 'undefined') {
+      const activeLoanQuery = `
+        SELECT * FROM loan_applications 
+        WHERE (user_id = $1 OR phone_number = $2) 
+          AND status IN ('approved', 'disbursed') 
+        LIMIT 1
+      `;
+      const activeLoanResult = await pool.query(activeLoanQuery, [userId, userPhone]);
+      if (activeLoanResult.rows.length > 0) {
+        activeLoan = activeLoanResult.rows[0];
+      }
+    }
+
+    if (activeLoan) {
       const principal = parseFloat(activeLoan.loan_amount) || 0;
       const interestRate = 0.10; // 10% interest rate
-      
+
       activeBalance = principal;
       totalDue = principal + (principal * interestRate);
       dueAmount = totalDue;
 
-      // Calculate due date (30 days from creation by default)
       const loanDate = new Date(activeLoan.created_at || Date.now());
       loanDate.setDate(loanDate.getDate() + 30);
       dueDate = loanDate.toLocaleDateString('en-GB', {
@@ -471,7 +480,6 @@ app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
         year: 'numeric'
       });
     }
-
     // 4. Return combined dashboard data structure
     return res.status(200).json({
       activeBalance,
@@ -493,4 +501,136 @@ app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Supreme Credit Server active on port ${PORT}`);
+});
+
+
+// -------------------------------------------------------------
+// SAFARICOM M-PESA DARAJA INTEGRATION
+// -------------------------------------------------------------
+
+// Helper: Generate Daraja OAuth Access Token
+async function getMpesaToken(req, res, next) {
+  try {
+    const consumerKey = process.env.MPESA_CONSUMER_KEY;
+    const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
+    const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
+
+    const response = await fetch('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
+      headers: {
+        Authorization: `Basic ${auth}`
+      }
+    });
+
+    const data = await response.json();
+    req.mpesaToken = data.access_token;
+    next();
+  } catch (error) {
+    console.error('Error fetching M-Pesa token:', error);
+    return res.status(500).json({ error: 'Failed to authenticate with Safaricom Daraja' });
+  }
+}
+
+// 1. Trigger STK Push Prompt
+app.post('/api/mpesa/stkpush', authenticateToken, getMpesaToken, async (req, res) => {
+  try {
+    const { amount, phone } = req.body;
+
+    if (!amount || !phone) {
+      return res.status(400).json({ error: 'Amount and phone number are required.' });
+    }
+
+    // Format phone to 254XXXXXXXXX
+    let formattedPhone = phone.replace(/[^0-9]/g, '');
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '254' + formattedPhone.substring(1);
+    }
+
+    const shortCode = process.env.MPESA_SHORTCODE || '174379';
+    const passkey = process.env.MPESA_PASSKEY;
+    
+    // Generate Timestamp (YYYYMMDDHHmmss)
+    const date = new Date();
+    const timestamp = date.getFullYear() +
+      String(date.getMonth() + 1).padStart(2, '0') +
+      String(date.getDate()).padStart(2, '0') +
+      String(date.getHours()).padStart(2, '0') +
+      String(date.getMinutes()).padStart(2, '0') +
+      String(date.getSeconds()).padStart(2, '0');
+
+    // Generate Password: Base64(Shortcode + Passkey + Timestamp)
+    const password = Buffer.from(`${shortCode}${passkey}${timestamp}`).toString('base64');
+
+    const callbackUrl = `${process.env.BASE_URL}/api/mpesa/callback`;
+
+    const stkPayload = {
+      BusinessShortCode: shortCode,
+      Password: password,
+      Timestamp: timestamp,
+      TransactionType: 'CustomerPayBillOnline',
+      Amount: Math.round(amount),
+      PartyA: formattedPhone,
+      PartyB: shortCode,
+      PhoneNumber: formattedPhone,
+      CallBackURL: callbackUrl,
+      AccountReference: 'SupremeCredit',
+      TransactionDesc: 'Loan Repayment'
+    };
+
+    const response = await fetch('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${req.mpesaToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(stkPayload)
+    });
+
+    const data = await response.json();
+
+    if (data.ResponseCode === '0') {
+      return res.status(200).json({
+        success: true,
+        message: 'STK Push sent successfully. Check your phone to enter PIN.',
+        CheckoutRequestID: data.CheckoutRequestID
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: data.ResponseDescription || 'Failed to initiate STK Push.'
+      });
+    }
+
+  } catch (error) {
+    console.error('STK Push Error:', error);
+    return res.status(500).json({ error: 'Internal server error processing payment.' });
+  }
+});
+
+// 2. M-Pesa Callback Webhook (Handles payment response from Safaricom)
+app.post('/api/mpesa/callback', async (req, res) => {
+  try {
+    const callbackData = req.body.Body.stkCallback;
+    const resultCode = callbackData.ResultCode;
+    const resultDesc = callbackData.ResultDesc;
+
+    if (resultCode === 0) {
+      // Payment Successful
+      const meta = callbackData.CallbackMetadata.Item;
+      const amount = meta.find(item => item.Name === 'Amount')?.Value;
+      const mpesaReceipt = meta.find(item => item.Name === 'MpesaReceiptNumber')?.Value;
+      const phoneNumber = meta.find(item => item.Name === 'PhoneNumber')?.Value;
+
+      console.log(`Payment Successful: ${mpesaReceipt} | KSh ${amount} | Phone: ${phoneNumber}`);
+
+      // TODO: Update user's active balance in database using Supabase or PostgreSQL Pool
+    } else {
+      console.log(`Payment Failed/Cancelled: ${resultDesc}`);
+    }
+
+    // Always respond to Safaricom with 200 OK
+    return res.status(200).json({ ResultCode: 0, ResultDesc: 'Success' });
+  } catch (error) {
+    console.error('Callback error:', error);
+    return res.status(200).json({ ResultCode: 0, ResultDesc: 'Accepted with error' });
+  }
 });
