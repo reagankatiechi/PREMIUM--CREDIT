@@ -415,7 +415,7 @@ app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
 
     let activeBalance = 0;
     let totalDue = 0;
-    let dueDate = N/A;
+    let dueDate = null;
     let dueAmount = 0;
     let applicationsHistory = [];
 
