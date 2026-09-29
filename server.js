@@ -413,6 +413,10 @@ app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
     const userId = req.user.id || req.user.userId;
     const userPhone = req.user.phone;
 
+    let activeBalance = 0;
+    let totalDue = 0;
+    let dueDate = N/A;
+    let dueAmount = 0;
     let applicationsHistory = [];
 
     // Safely query using Supabase or Postgres Pool depending on setup
@@ -513,6 +517,11 @@ async function getMpesaToken(req, res, next) {
   try {
     const consumerKey = process.env.MPESA_CONSUMER_KEY;
     const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
+
+    if (!consumerKey || !consumerSecret) {
+      return res.status(500).json({ error: 'M-Pesa Consumer Key or Secret is missing from environment variables.' });
+    }
+
     const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
 
     const response = await fetch('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
@@ -521,7 +530,14 @@ async function getMpesaToken(req, res, next) {
       }
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      console.error('Safaricom Auth Failed Response:', responseText);
+      return res.status(500).json({ error: 'Failed to authenticate with Safaricom Daraja. Check your Consumer Key/Secret.' });
+    }
+
+    const data = JSON.parse(responseText);
     req.mpesaToken = data.access_token;
     next();
   } catch (error) {
