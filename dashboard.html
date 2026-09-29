@@ -255,146 +255,119 @@
   </div>
 
   <script>
-    const API_BASE_URL = 'https://premium-credit.onrender.com';
-    const byId = id => document.getElementById(id);
+  const API_BASE_URL = 'https://premium-credit.onrender.com';
+  const byId = id => document.getElementById(id);
 
-    // 1. AUTH CHECK
-    const token = localStorage.getItem('supreme_user_token');
-    const userDataRaw = localStorage.getItem('supreme_user_data');
+  // 1. AUTH CHECK
+  const token = localStorage.getItem('supreme_user_token');
+  const userDataRaw = localStorage.getItem('supreme_user_data');
 
-    if (!token || !userDataRaw) {
-      window.location.href = 'index.html'; // Redirect to login if not authenticated
+  if (!token || !userDataRaw) {
+    window.location.href = 'index.html'; // Redirect to login if not authenticated
+  }
+
+  const userData = JSON.parse(userDataRaw || '{}');
+
+  // Populate Navigation Info
+  if (byId('navUserName')) byId('navUserName').textContent = userData.fullName || 'User';
+  if (byId('navUserPhone')) byId('navUserPhone').textContent = userData.phone || '';
+  if (byId('welcomeHeading')) byId('welcomeHeading').textContent = `Welcome back, ${userData.fullName || 'User'}!`;
+
+  // Render Profile Picture or Initials Fallback
+  const avatarContainer = byId('navUserAvatar');
+  const photoUrl = userData.profilePic || userData.profilePhoto || userData.avatarUrl || userData.profile_pic_url;
+
+  if (avatarContainer) {
+    if (photoUrl) {
+      avatarContainer.innerHTML = `<img src="${photoUrl}" alt="Profile" class="h-full w-full rounded-full object-cover">`;
+      avatarContainer.classList.remove('bg-emerald-800', 'text-white');
+    } else if (userData.fullName) {
+      avatarContainer.textContent = userData.fullName.charAt(0).toUpperCase();
     }
+  }
 
-    const userData = JSON.parse(userDataRaw || '{}');
-// Populate Navigation Info
-byId('navUserName').textContent = userData.fullName || 'User';
-byId('navUserPhone').textContent = userData.phone || '';
-byId('welcomeHeading').textContent = `Welcome back, ${userData.fullName || 'User'}!`;
+  // Logout Action
+  byId('logoutBtn')?.addEventListener('click', () => {
+    localStorage.removeItem('supreme_user_token');
+    localStorage.removeItem('supreme_user_data');
+    window.location.href = 'index.html';
+  });
 
-// Render Profile Picture or Initials Fallback
-const avatarContainer = byId('navUserAvatar');
-const photoUrl = userData.profilePic || userData.profilePhoto || userData.avatarUrl || userData.profile_pic_url;
-
-if (photoUrl) {
-  avatarContainer.innerHTML = `<img src="${photoUrl}" alt="Profile" class="w-full h-full rounded-full object-cover">`;
-  avatarContainer.classList.remove('bg-emerald-800', 'text-white'); // Remove initial background styling
-} else if (userData.fullName) {
-  avatarContainer.textContent = userData.fullName.charAt(0).toUpperCase();
-}
-// Fetch latest loan status from backend database
-async function syncDashboardData() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const data = await response.json();
-
-    if (data.success && data.applicationsHistory && data.applicationsHistory.length > 0) {
-      const latestApp = data.applicationsHistory[0];
-      const statusText = (latestApp.status || 'PENDING').toUpperCase();
-      const amount = Number(latestApp.loan_amount || 0);
-
-      // Target status badge, active balance, and repayment cards dynamically
-      document.querySelectorAll('div').forEach(card => {
-        const text = card.textContent || '';
-
-        // Update "LATEST REQUEST" card
-        if (text.includes('LATEST REQUEST')) {
-          const badge = card.querySelector('span, div');
-          if (badge) {
-            badge.textContent = statusText;
-            badge.className = statusText === 'APPROVED' 
-              ? 'px-3 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800' 
-              : 'px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800';
-          }
-        }
-
-        // Update "ACTIVE BALANCE" card if loan is approved
-        if (text.includes('ACTIVE BALANCE') && statusText === 'APPROVED') {
-          const balanceEl = card.querySelector('h3, .text-2xl');
-          if (balanceEl) balanceEl.textContent = `KSh ${amount.toLocaleString()}`;
+  // 2. FETCH DASHBOARD DATA & UPDATE UI
+  async function loadDashboardData() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
-    }
-  } catch (err) {
-    console.error('Error fetching latest dashboard status:', err);
-  }
-}
 
-// Execute on page load
-syncDashboardData();
-
-// Trigger live fetch on page load
-loadLatestDashboardData();
-if (photoUrl) {
-  avatarContainer.innerHTML = `<img src="${photoUrl}" alt="Profile" class="h-full w-full rounded-full object-cover">`;
-  avatarContainer.classList.remove('bg-emerald-800', 'text-white'); // Remove fallback background styling
-} else if (userData.fullName) {
-  avatarContainer.textContent = userData.fullName.charAt(0).toUpperCase();
-}
-
-    // Logout Action
-    byId('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('supreme_user_token');
-      localStorage.removeItem('supreme_user_data');
-      window.location.href = 'index.html';
-    });
-
-    // 2. FETCH DASHBOARD DATA
-    async function loadDashboardData() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
-        }
-
-        const data = await response.json();
-        updateDashboardUI(data);
-
-      } catch (err) {
-        console.warn('Dashboard API fallback activated:', err.message);
-        // Display default placeholder state if endpoint is still being connected
-        updateProgressStepper('Submitted');
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
       }
-    }
 
-    // 3. UI UPDATE LOGIC
-    function updateDashboardUI(data) {
-      const latestApp = data.latestApplication || {};
-      
-      // Update Summary Cards
-      byId('statActiveBalance').textContent = `KSh ${(data.activeBalance || 0).toLocaleString()}`;
-      byId('statTotalRepayable').textContent = `Total Due: KSh ${(data.totalDue || 0).toLocaleString()}`;
-      byId('statDueDate').textContent = data.dueDate || 'N/A';
-      byId('statDueAmount').textContent = `Amount: KSh ${(data.dueAmount || 0).toLocaleString()}`;
-      byId('statCreditLimit').textContent = `KSh ${(data.creditLimit || 50000).toLocaleString()}`;
-      
-      if (latestApp.status) {
+      const data = await response.json();
+      updateDashboardUI(data);
+
+    } catch (err) {
+      console.warn('Dashboard API fallback activated:', err.message);
+      updateProgressStepper('Submitted');
+    }
+  }
+
+  // 3. UI UPDATE LOGIC
+  function updateDashboardUI(data) {
+    const historyList = data.applicationsHistory || [];
+    const latestApp = data.latestApplication || (historyList.length > 0 ? historyList[0] : {});
+    const statusText = (latestApp.status || 'PENDING').toUpperCase();
+
+    // Update Summary Cards by ID
+    if (byId('statActiveBalance')) byId('statActiveBalance').textContent = `KSh ${(data.activeBalance || 0).toLocaleString()}`;
+    if (byId('statTotalRepayable')) byId('statTotalRepayable').textContent = `Total Due: KSh ${(data.totalDue || 0).toLocaleString()}`;
+    if (byId('statDueDate')) byId('statDueDate').textContent = data.dueDate || 'N/A';
+    if (byId('statDueAmount')) byId('statDueAmount').textContent = `Amount: KSh ${(data.dueAmount || 0).toLocaleString()}`;
+    if (byId('statCreditLimit')) byId('statCreditLimit').textContent = `KSh ${(data.creditLimit || 50000).toLocaleString()}`;
+
+    if (latestApp.status) {
+      if (byId('statStatusBadge')) {
         byId('statStatusBadge').textContent = latestApp.status;
         byId('statStatusBadge').className = getBadgeClass(latestApp.status);
-        byId('statRequestedAmount').textContent = `Amount: KSh ${(latestApp.loan_amount || 0).toLocaleString()}`;
-        byId('trackerRefCode').textContent = `REF: #${latestApp.id || '---'}`;
-        updateProgressStepper(latestApp.status);
+      }
+      if (byId('statRequestedAmount')) byId('statRequestedAmount').textContent = `Amount: KSh ${(latestApp.loan_amount || 0).toLocaleString()}`;
+      if (byId('trackerRefCode')) byId('trackerRefCode').textContent = `REF: #${latestApp.id || '---'}`;
+      updateProgressStepper(latestApp.status);
+    }
+
+    // Dynamic UI card updating for status, balance, and latest loan request
+    document.querySelectorAll('div').forEach(card => {
+      const text = card.textContent || '';
+
+      if (text.includes('LATEST REQUEST')) {
+        const badge = card.querySelector('span, div');
+        const amountEl = card.querySelector('p');
+        if (badge) {
+          badge.textContent = statusText;
+          badge.className = getBadgeClass(statusText);
+        }
+        if (amountEl && latestApp.loan_amount) {
+          amountEl.textContent = `Amount: KSh ${Number(latestApp.loan_amount).toLocaleString()}`;
+        }
       }
 
-      // Populate Repayment Card
-      byId('repayPrincipal').textContent = `KSh ${(data.activeBalance || 0).toLocaleString()}`;
-      byId('repayTotalOutstanding').textContent = `KSh ${(data.totalDue || 0).toLocaleString()}`;
+      if (text.includes('ACTIVE BALANCE') && (statusText === 'APPROVED' || statusText === 'DISBURSED')) {
+        const balanceEl = card.querySelector('h3, .text-2xl');
+        if (balanceEl) balanceEl.textContent = `KSh ${Number(latestApp.loan_amount || 0).toLocaleString()}`;
+      }
+    });
 
-      // Populate History Table
-      const historyList = data.applicationsHistory || [];
-      const tbody = byId('historyTableBody');
+    // Populate Repayment Card
+    if (byId('repayPrincipal')) byId('repayPrincipal').textContent = `KSh ${(data.activeBalance || 0).toLocaleString()}`;
+    if (byId('repayTotalOutstanding')) byId('repayTotalOutstanding').textContent = `KSh ${(data.totalDue || 0).toLocaleString()}`;
+
+    // Populate History Table
+    const tbody = byId('historyTableBody');
+    if (tbody) {
       if (historyList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">No applications recorded yet.</td></tr>`;
       } else {
@@ -408,162 +381,141 @@ if (photoUrl) {
         `).join('');
       }
     }
-
-    function getBadgeClass(status) {
-      switch ((status || '').toLowerCase()) {
-        case 'approved':
-        case 'disbursed':
-          return 'inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800';
-        case 'under review':
-        case 'submitted':
-        case 'pending':
-          return 'inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800';
-        case 'rejected':
-          return 'inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800';
-        default:
-          return 'inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600';
-      }
-    }
-    // -------------------------------------------------------------
-// M-PESA REPAYMENT MODAL & STK PUSH HANDLER
-// -------------------------------------------------------------
-const repayModal = byId('repayModal');
-const repayPhone = byId('repayPhone');
-const repayAmount = byId('repayAmount');
-const repayStatus = byId('repayStatus');
-
-// Open Modal Handler
-function openRepayModal(defaultAmount = '') {
-  const userData = JSON.parse(localStorage.getItem('supreme_user_data') || '{}');
-  if (repayPhone) repayPhone.value = userData.phone || '';
-  if (defaultAmount && repayAmount) repayAmount.value = defaultAmount;
-  
-  if (repayStatus) repayStatus.classList.add('hidden');
-  if (repayModal) {
-    repayModal.classList.remove('hidden');
-    repayModal.classList.add('flex');
-  }
-}
-
-// Close Modal Handler
-byId('closeRepayModal')?.addEventListener('click', () => {
-  if (repayModal) {
-    repayModal.classList.add('hidden');
-    repayModal.classList.remove('flex');
-  }
-});
-
-// Submit STK Push Form
-byId('repayForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const token = localStorage.getItem('supreme_user_token');
-  const phone = repayPhone ? repayPhone.value.trim() : '';
-  const amount = repayAmount ? repayAmount.value.trim() : '';
-
-  if (!phone || !amount) {
-    alert('Please enter a valid amount and ensure your phone number is attached.');
-    return;
   }
 
-  const btn = byId('btnSubmitRepayment');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Initiating STK Push...';
-  }
-
-  if (repayStatus) {
-    repayStatus.className = 'text-sm font-medium text-blue-600 block mt-2';
-    repayStatus.textContent = '📲 Prompt sent! Check your phone to enter M-Pesa PIN...';
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/mpesa/stkpush`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ phone, amount })
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      if (repayStatus) {
-        repayStatus.className = 'text-sm font-medium text-emerald-600 block mt-2';
-        repayStatus.textContent = '✅ STK Push sent successfully. Please enter your PIN on your phone.';
-      }
-      setTimeout(() => {
-        if (repayModal) {
-          repayModal.classList.add('hidden');
-          repayModal.classList.remove('flex');
-        }
-      }, 4000);
-    } else {
-      if (repayStatus) {
-        repayStatus.className = 'text-sm font-medium text-red-600 block mt-2';
-        repayStatus.textContent = `❌ ${result.message || 'Failed to initiate STK Push.'}`;
-      }
-    }
-  } catch (err) {
-    console.error('Payment Error:', err);
-    if (repayStatus) {
-      repayStatus.className = 'text-sm font-medium text-red-600 block mt-2';
-      repayStatus.textContent = '❌ Network error connecting to payment gateway.';
-    }
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Send M-Pesa STK Push';
+  function getBadgeClass(status) {
+    switch ((status || '').toLowerCase()) {
+      case 'approved':
+      case 'disbursed':
+        return 'inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800';
+      case 'under review':
+      case 'submitted':
+      case 'pending':
+        return 'inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800';
+      case 'rejected':
+        return 'inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800';
+      default:
+        return 'inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600';
     }
   }
-});
 
-    function updateProgressStepper(status) {
-      const activeClass = 'bg-supreme-gold text-white';
-      const fill = byId('progressBarFill');
+  function updateProgressStepper(status) {
+    const activeClass = 'bg-supreme-gold text-white';
+    const fill = byId('progressBarFill');
 
-      const s1 = byId('step1Circle');
-      const s2 = byId('step2Circle');
-      const s3 = byId('step3Circle');
-      const s4 = byId('step4Circle');
+    const s1 = byId('step1Circle');
+    const s2 = byId('step2Circle');
+    const s3 = byId('step3Circle');
+    const s4 = byId('step4Circle');
 
-      const st = (status || '').toLowerCase();
+    const st = (status || '').toLowerCase();
 
+    if (fill && s1) {
       if (st === 'submitted' || st === 'pending') {
         fill.style.width = '10%';
         s1.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
       } else if (st === 'under review') {
         fill.style.width = '40%';
-        s1.className = s2.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
+        if (s1 && s2) s1.className = s2.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
       } else if (st === 'approved') {
         fill.style.width = '70%';
-        s1.className = s2.className = s3.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
+        if (s1 && s2 && s3) s1.className = s2.className = s3.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
       } else if (st === 'disbursed') {
         fill.style.width = '100%';
-        s1.className = s2.className = s3.className = s4.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
+        if (s1 && s2 && s3 && s4) s1.className = s2.className = s3.className = s4.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
       }
     }
+  }
 
-    // Modal Control
-    const modal = byId('repayModal');
-    byId('openRepayModalBtn').addEventListener('click', () => {
-      byId('repayPhone').value = userData.phone || '';
-      modal.classList.remove('hidden');
-    });
-    byId('closeRepayModal').addEventListener('click', () => modal.classList.add('hidden'));
+  // 4. M-PESA REPAYMENT MODAL & STK PUSH HANDLER
+  const repayModal = byId('repayModal');
+  const repayPhone = byId('repayPhone');
+  const repayAmount = byId('repayAmount');
+  const repayStatus = byId('repayStatus');
 
-    // Repay Form Submission
-    byId('repayForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      alert(`M-Pesa STK Push initiated for KSh ${byId('repayAmount').value} on ${byId('repayPhone').value}. Check your phone to complete PIN entry.`);
-      modal.classList.add('hidden');
-    });
+  byId('openRepayModalBtn')?.addEventListener('click', () => {
+    if (repayPhone) repayPhone.value = userData.phone || '';
+    if (repayModal) modalDisplay(true);
+  });
 
-    // Run on load
-    loadDashboardData();
-  </script>
+  byId('closeRepayModal')?.addEventListener('click', () => {
+    if (repayModal) modalDisplay(false);
+  });
+
+  function modalDisplay(show) {
+    if (!repayModal) return;
+    if (show) {
+      repayModal.classList.remove('hidden');
+      repayModal.classList.add('flex');
+    } else {
+      repayModal.classList.add('hidden');
+      repayModal.classList.remove('flex');
+    }
+  }
+
+  byId('repayForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const phone = repayPhone ? repayPhone.value.trim() : '';
+    const amount = repayAmount ? repayAmount.value.trim() : '';
+
+    if (!phone || !amount) {
+      alert('Please enter a valid amount and ensure your phone number is attached.');
+      return;
+    }
+
+    const btn = byId('btnSubmitRepayment');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Initiating STK Push...';
+    }
+
+    if (repayStatus) {
+      repayStatus.className = 'text-sm font-medium text-blue-600 block mt-2';
+      repayStatus.textContent = '📲 Prompt sent! Check your phone to enter M-Pesa PIN...';
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/mpesa/stkpush`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ phone, amount })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        if (repayStatus) {
+          repayStatus.className = 'text-sm font-medium text-emerald-600 block mt-2';
+          repayStatus.textContent = '✅ STK Push sent successfully. Please enter your PIN on your phone.';
+        }
+        setTimeout(() => modalDisplay(false), 4000);
+      } else {
+        if (repayStatus) {
+          repayStatus.className = 'text-sm font-medium text-red-600 block mt-2';
+          repayStatus.textContent = `❌ ${result.message || 'Failed to initiate STK Push.'}`;
+        }
+      }
+    } catch (err) {
+      console.error('Payment Error:', err);
+      if (repayStatus) {
+        repayStatus.className = 'text-sm font-medium text-red-600 block mt-2';
+        repayStatus.textContent = '❌ Network error connecting to payment gateway.';
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Send M-Pesa STK Push';
+      }
+    }
+  });
+
+  // Run on load
+  loadDashboardData();
+</script>
   <!-- REPAYMENT MODAL -->
 <div id="repayModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform transition-all">
