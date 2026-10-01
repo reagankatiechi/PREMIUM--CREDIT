@@ -407,19 +407,22 @@ function authenticateToken(req, res, next) {
 
 app.get('/api/user/dashboard', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id; // Extracted from JWT token
+    // Extract full name or ID from decoded JWT
+    const applicantName = req.user.fullName || req.user.full_name || 'WOLOLO';
 
-    // Fetch user applications matching userId
+    // Query using applicant_name to match your Supabase schema
     const applicationsQuery = `
       SELECT * FROM applications 
-      WHERE user_id = $1 
+      WHERE applicant_name = $1 
       ORDER BY created_at DESC
     `;
-    const { rows: applications } = await db.query(applicationsQuery, [userId]);
+    const { rows: applications } = await db.query(applicationsQuery, [applicantName]);
 
     const latestApp = applications.length > 0 ? applications[0] : null;
     const loanStatus = latestApp ? latestApp.status : 'No Application';
-    const activeBalance = latestApp && latestApp.status === 'APPROVED' ? latestApp.loan_amount : 0;
+    const activeBalance = latestApp && (latestApp.status === 'APPROVED' || latestApp.status === 'DISBURSED') 
+      ? Number(latestApp.loan_amount) 
+      : 0;
 
     res.json({
       success: true,
@@ -429,11 +432,10 @@ app.get('/api/user/dashboard', verifyToken, async (req, res) => {
       applicationsHistory: applications
     });
   } catch (err) {
-    console.error(err);
+    console.error('Dashboard Error:', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-
 // Start Server bound to 0.0.0.0
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
