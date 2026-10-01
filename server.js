@@ -407,17 +407,15 @@ function authenticateToken(req, res, next) {
 
 app.get('/api/user/dashboard', verifyToken, async (req, res) => {
   try {
-    // Extract full name or ID from decoded JWT
-    const applicantName = req.user.fullName || req.user.full_name || 'WOLOLO';
+    // Optional chaining prevents server crashes if req.user fields are missing
+    const applicantName = req.user?.fullName || req.user?.full_name || req.user?.name || 'WOLOLO';
 
-    // Query using applicant_name to match your Supabase schema
     const applicationsQuery = `
       SELECT * FROM applications 
       WHERE applicant_name = $1 
       ORDER BY created_at DESC
     `;
     const { rows: applications } = await db.query(applicationsQuery, [applicantName]);
-
     const latestApp = applications.length > 0 ? applications[0] : null;
     const loanStatus = latestApp ? latestApp.status : 'No Application';
     const activeBalance = latestApp && (latestApp.status === 'APPROVED' || latestApp.status === 'DISBURSED') 
