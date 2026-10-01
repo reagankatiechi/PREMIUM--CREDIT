@@ -255,29 +255,30 @@
   </div>
 
   <script>
-  const API_BASE_URL = 'https://premium-credit.onrender.com';
-  const byId = id => document.getElementById(id);
+    const API_BASE_URL = 'https://premium-credit.onrender.com';
+    const byId = id => document.getElementById(id);
 
-  // 1. AUTH CHECK
-  const token = localStorage.getItem('supreme_user_token');
-  const userDataRaw = localStorage.getItem('supreme_user_data');
+    // 1. AUTH CHECK
+    const token = localStorage.getItem('supreme_user_token');
+    const userDataRaw = localStorage.getItem('supreme_user_data');
 
-  if (!token || !userDataRaw) {
+    if (!token || !userDataRaw) {
     window.location.href = 'index.html'; // Redirect to login if not authenticated
-  }
+    }
+   const userData = JSON.parse(userDataRaw || '{}');
+  
 
-  const userData = JSON.parse(userDataRaw || '{}');
+   // Populate Navigation Info
+   if (byId('navUserName')) byId('navUserName').textContent = userData.fullName || 'User';
+   if (byId('navUserPhone')) byId('navUserPhone').textContent = userData.phone || '';
+   if (byId('welcomeHeading')) byId('welcomeHeading').textContent = `Welcome back, ${userData.fullName || 'User'}!`;
 
-  // Populate Navigation Info
-  if (byId('navUserName')) byId('navUserName').textContent = userData.fullName || 'User';
-  if (byId('navUserPhone')) byId('navUserPhone').textContent = userData.phone || '';
-  if (byId('welcomeHeading')) byId('welcomeHeading').textContent = `Welcome back, ${userData.fullName || 'User'}!`;
+   // Render Profile Picture or Initials Fallback
+   const avatarContainer = byId('navUserAvatar');
+   const photoUrl = userData.profilePic || userData.profilePhoto || userData.avatarUrl || userData.profile_pic_url;
 
-  // Render Profile Picture or Initials Fallback
-  const avatarContainer = byId('navUserAvatar');
-  const photoUrl = userData.profilePic || userData.profilePhoto || userData.avatarUrl || userData.profile_pic_url;
 
-  if (avatarContainer) {
+   if (avatarContainer) {
     if (photoUrl) {
       avatarContainer.innerHTML = `<img src="${photoUrl}" alt="Profile" class="h-full w-full rounded-full object-cover">`;
       avatarContainer.classList.remove('bg-emerald-800', 'text-white');
@@ -285,8 +286,8 @@
       avatarContainer.textContent = userData.fullName.charAt(0).toUpperCase();
     }
   }
-
   // Logout Action
+
   byId('logoutBtn')?.addEventListener('click', () => {
     localStorage.removeItem('supreme_user_token');
     localStorage.removeItem('supreme_user_data');
