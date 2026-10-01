@@ -405,51 +405,32 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// -------------------------------------------------------------
-// GET /api/user/dashboard
-// -------------------------------------------------------------
-app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
+app.get('/api/user/dashboard', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id || req.user.userId;
-    const userPhone = req.user.phone;
+    const userId = req.user.id; // Extracted from JWT token
 
-    let applicationsHistory = [];
-    let activeLoan = null;
+    // Fetch user applications matching userId
+    const applicationsQuery = `
+      SELECT * FROM applications 
+      WHERE user_id = $1 
+      ORDER BY created_at DESC
+    `;
+    const { rows: applications } = await db.query(applicationsQuery, [userId]);
 
-    // Fetch user applications
-    if (typeof supabase !== 'undefined') {
-      const { data, error } = await supabase
-        .from('loan_applications')
-        .select('*')
-        .or(`user_id.eq.${userId},phone_number.eq.${userPhone}`)
-        .order('created_at', { ascending: false });
-
-      if (!error && data) applicationsHistory = data;
-    } else if (typeof pool !== 'undefined') {
-      const result = await pool.query(
-        'SELECT * FROM loan_applications WHERE user_id = $1 OR phone_number = $2 ORDER BY created_at DESC',
-        [userId, userPhone]
-      );
-      applicationsHistory = result.rows;
-    }
-
-    // Find the latest active/approved application
-    if (applicationsHistory.length > 0) {
-      activeLoan = applicationsHistory.find(
-        app => app.status.toLowerCase() === 'approved' || app.status.toLowerCase() === 'disbursed'
-      ) || applicationsHistory[0]; // fallback to most recent
-    }
+    const latestApp = applications.length > 0 ? applications[0] : null;
+    const loanStatus = latestApp ? latestApp.status : 'No Application';
+    const activeBalance = latestApp && latestApp.status === 'APPROVED' ? latestApp.loan_amount : 0;
 
     res.json({
       success: true,
-      loanStatus: activeLoan ? activeLoan.status : 'No Application',
-      activeBalance: activeLoan && activeLoan.status.toLowerCase() === 'approved' ? activeLoan.loan_amount : 0,
-      applicationsHistory
+      loanStatus: loanStatus,
+      activeBalance: activeBalance,
+      latestApplication: latestApp,
+      applicationsHistory: applications
     });
-
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error);
-    res.status(500).json({ error: 'Failed to fetch dashboard data' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
