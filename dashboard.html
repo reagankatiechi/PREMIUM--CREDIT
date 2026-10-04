@@ -174,17 +174,17 @@
           <p class="mt-1 text-xs text-slate-500">Make repayments via M-Pesa directly to clear your balance.</p>
 
           <div class="mt-6 rounded-2xl bg-slate-50 p-5 border border-slate-100">
-            <div class="flex justify-between text-sm py-1">
+            <div class="flex justify-between text-sm">
               <span class="text-slate-500">Principal Loan:</span>
-              <span class="font-bold text-slate-800" id="repayPrincipal">KSh 0</span>
+              <span id="statPrincipalLoan" class="font-bold text-slate-800">KSh 0</span>
             </div>
-            <div class="flex justify-between text-sm py-1">
+            <div class="flex justify-between text-sm mt-1">
               <span class="text-slate-500">Interest Rate:</span>
               <span class="font-bold text-slate-800">10%</span>
             </div>
-            <div class="flex justify-between text-sm py-1 border-t border-slate-200 mt-2 pt-2">
+            <div class="flex justify-between text-base mt-3 pt-3 border-t">
               <span class="font-bold text-slate-800">Total Outstanding:</span>
-              <span class="font-extrabold text-supreme-gold text-lg" id="repayTotalOutstanding">KSh 0</span>
+              <span id="statTotalOutstanding" class="font-bold text-amber-500">KSh 0</span>
             </div>
           </div>
 
@@ -295,87 +295,51 @@
 
   // 2. FETCH AND UPDATE DASHBOARD
   async function loadDashboardData() {
-    console.log('Fetching live data from backend...');
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+  try {
+    console.log("Fetching live data from backend...");
+    const token = localStorage.getItem("token"); // or your JWT storage key
 
-      if (!response.ok) {
-        throw new Error(`Server returned status ${response.status}`);
+    const res = await fetch("https://premium-credit.onrender.com/api/user/dashboard", {
+      headers: {
+        "Authorization": `Bearer ${token}`
       }
+    });
 
-      const resData = await response.json();
-      console.log('Backend Data Payload:', resData);
+    const data = await res.json();
+    console.log("Backend Data Payload:", data);
 
-      // Support direct object or nested data payloads
-      const data = resData.data || resData;
-      const historyList = data.applicationsHistory || data.applications || data.history || [];
-      const latestApp = data.latestApplication || (historyList.length > 0 ? historyList[0] : null);
+    if (!data.success || !data.applicationsHistory) return;
 
-      if (latestApp) {
-        const statusText = (latestApp.status || 'PENDING').toUpperCase();
-        const amount = Number(latestApp.loan_amount || latestApp.amount || 0);
+    const history = data.applicationsHistory;
 
-        // Update ID-targeted fields if present
-        if (byId('statRequestedAmount')) byId('statRequestedAmount').textContent = `Amount: KSh ${amount.toLocaleString()}`;
-        if (byId('trackerRefCode')) byId('trackerRefCode').textContent = `REF: #${latestApp.id || '---'}`;
+    // Find the latest approved/disbursed loan
+    const activeLoan = history.find(app => 
+      app.status && (app.status.toUpperCase() === 'APPROVED' || app.status.toUpperCase() === 'DISBURSED')
+    );
 
-        // Dynamic Badge & Card Updates
-        document.querySelectorAll('div').forEach(card => {
-          const content = card.textContent || '';
+    if (activeLoan) {
+      const principal = Number(activeLoan.loan_amount || 0);
+      const interestRate = 0.10; // 10%
+      const interestAmount = principal * interestRate;
+      const totalOutstanding = principal + interestAmount;
 
-          if (content.includes('LATEST REQUEST')) {
-            const badge = card.querySelector('span, div.rounded-full');
-            const amountPara = card.querySelector('p');
+      // Hydrate Active Loan / Payment Card
+      const principalEl = document.getElementById("statPrincipalLoan");
+      const totalOutstandingEl = document.getElementById("statTotalOutstanding");
+      const activeBalanceCardEl = document.getElementById("statActiveBalance");
 
-            if (badge) {
-              badge.textContent = statusText;
-              badge.className = (statusText === 'APPROVED' || statusText === 'DISBURSED')
-                ? 'inline-block px-3 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800'
-                : 'inline-block px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800';
-            }
-            if (amountPara) {
-              amountPara.textContent = `Amount: KSh ${amount.toLocaleString()}`;
-            }
-          }
-
-          if (content.includes('ACTIVE BALANCE') && (statusText === 'APPROVED' || statusText === 'DISBURSED')) {
-            const balanceEl = card.querySelector('h3, .text-2xl');
-            if (balanceEl) balanceEl.textContent = `KSh ${amount.toLocaleString()}`;
-          }
-        });
-
-        updateProgressStepper(statusText);
-      } else {
-        console.warn('No active application array found in response.');
-      }
-
-      // Populate Table
-      const tbody = byId('historyTableBody');
-      if (tbody) {
-        if (historyList.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">No applications recorded yet.</td></tr>`;
-        } else {
-          tbody.innerHTML = historyList.map(app => `
-            <tr class="hover:bg-slate-50">
-              <td class="p-3 font-medium text-slate-700">${new Date(app.created_at || Date.now()).toLocaleDateString()}</td>
-              <td class="p-3 font-bold text-slate-800">KSh ${(app.loan_amount || app.amount || 0).toLocaleString()}</td>
-              <td class="p-3 text-slate-500">${app.repayment_period || '1 Month'}</td>
-              <td class="p-3"><span class="${getBadgeClass(app.status)}">${(app.status || 'Pending').toUpperCase()}</span></td>
-            </tr>
-          `).join('');
-        }
-      }
-
-    } catch (err) {
-      console.error('Failed to load dashboard data:', err);
+      if (principalEl) principalEl.textContent = `KSh ${principal.toLocaleString()}`;
+      if (totalOutstandingEl) totalOutstandingEl.textContent = `KSh ${totalOutstanding.toLocaleString()}`;
+      if (activeBalanceCardEl) activeBalanceCardEl.textContent = `KSh ${totalOutstanding.toLocaleString()}`;
     }
+
+    // Populate Application History Table
+    renderHistoryTable(history);
+
+  } catch (err) {
+    console.error("Dashboard error:", err);
   }
+}
 
   function getBadgeClass(status) {
     switch ((status || '').toLowerCase()) {
