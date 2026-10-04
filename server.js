@@ -407,31 +407,42 @@ function authenticateToken(req, res, next) {
 
 app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
   try {
-    // Optional chaining prevents server crashes if req.user fields are missing
-    const applicantName = req.user?.fullName || req.user?.full_name || req.user?.name || 'WOLOLO';
+    console.log('Decoded req.user:', req.user);
+
+    // Safely extract name, username, or fallback
+    const user = req.user || {};
+    const applicantName = user.fullName || user.full_name || user.username || user.name || 'WOLOLO';
 
     const applicationsQuery = `
       SELECT * FROM applications 
       WHERE applicant_name = $1 
       ORDER BY created_at DESC
     `;
-    const { rows: applications } = await db.query(applicationsQuery, [applicantName]);
+
+    // Ensure this matches your db/pool client variable name
+    const { rows: applications } = await pool.query(applicationsQuery, [applicantName]);
+
     const latestApp = applications.length > 0 ? applications[0] : null;
     const loanStatus = latestApp ? latestApp.status : 'No Application';
-    const activeBalance = latestApp && (latestApp.status === 'APPROVED' || latestApp.status === 'DISBURSED') 
-      ? Number(latestApp.loan_amount) 
+    const activeBalance = (latestApp && (latestApp.status.toUpperCase() === 'APPROVED' || latestApp.status.toUpperCase() === 'DISBURSED'))
+      ? Number(latestApp.loan_amount || 0)
       : 0;
 
-    res.json({
+    return res.json({
       success: true,
       loanStatus: loanStatus,
       activeBalance: activeBalance,
       latestApplication: latestApp,
       applicationsHistory: applications
     });
+
   } catch (err) {
-    console.error('Dashboard Error:', err);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Dashboard Route Internal Error:', err);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to retrieve dashboard data', 
+      error: err.message 
+    });
   }
 });
 // Start Server bound to 0.0.0.0
