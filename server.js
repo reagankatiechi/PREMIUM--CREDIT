@@ -405,7 +405,7 @@ function authenticateToken(req, res, next) {
   });
 }
 
-app.get('/api/user/dashboard', verifyToken, async (req, res) => {
+app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
   try {
     // Optional chaining prevents server crashes if req.user fields are missing
     const applicantName = req.user?.fullName || req.user?.full_name || req.user?.name || 'WOLOLO';
