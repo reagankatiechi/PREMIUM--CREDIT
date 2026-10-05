@@ -292,97 +292,151 @@
     localStorage.removeItem('supreme_user_data');
     window.location.href = 'index.html';
   });
-
-  // 2. FETCH AND UPDATE DASHBOARD
   async function loadDashboardData() {
+    try {
+      const token = localStorage.getItem("supreme_user_token");
+      if (!token) throw new Error("No auth token found.");
+
+      const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+      console.log("Backend Data Payload:", data);
+
+      if (!data.success || !data.applicationsHistory || data.applicationsHistory.length === 0) return;
+
+      const history = data.applicationsHistory;
+      
+      // Grab the most recent application submitted
+      const latestApp = history[0]; 
+
+      // Find if there is an approved or active loan
+      const activeApp = history.find(app => 
+        app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
+      );
+
+      // 1. Update Active Balance Card
+      if (activeApp) {
+        const principal = Number(activeApp.loan_amount || 0);
+        const totalDue = principal + (principal * 0.10); // 10% interest
+        
+        const activeBalEl = byId("statActiveBalance");
+        if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
+      }
+
+      // 2. Update Latest Request Badge & Amount Card
+      const statusBadge = byId("statStatusBadge");
+      const requestedAmt = byId("statRequestedAmount");
+      
+      if (latestApp) {
+        if (statusBadge) {
+          statusBadge.textContent = latestApp.status;
+          statusBadge.className = `inline-block rounded-full px-3 py-1 text-xs font-bold ${
+            latestApp.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+          }`;
+        }
+        if (requestedAmt) {
+          requestedAmt.textContent = `Amount: KSh ${Number(latestApp.loan_amount).toLocaleString()}`;
+        }
+      }
+
+      // 3. Update Stepper Progress Bar
+      updateStepperProgress(latestApp ? latestApp.status : 'PENDING');
+
+      // 4. Render History Table
+      if (typeof renderHistoryTable === 'function') {
+        renderHistoryTable(history);
+      }
+
+    } catch (err) {
+      console.error("Error populating dashboard:", err);
+    }
   try {
-    console.log("Fetching live data from backend...");
-    const token = localStorage.getItem("token"); // or your JWT storage key
+    const token = localStorage.getItem("token") || localStorage.getItem("authToken");
 
     const res = await fetch("https://premium-credit.onrender.com/api/user/dashboard", {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
+      headers: { "Authorization": `Bearer ${token}` }
     });
 
     const data = await res.json();
     console.log("Backend Data Payload:", data);
 
-    if (!data.success || !data.applicationsHistory) return;
+    if (!data.success || !data.applicationsHistory || data.applicationsHistory.length === 0) return;
 
     const history = data.applicationsHistory;
+    
+    // Grab the most recent application submitted
+    const latestApp = history[0]; 
 
-    // Find the latest approved/disbursed loan
-    const activeLoan = history.find(app => 
-      app.status && (app.status.toUpperCase() === 'APPROVED' || app.status.toUpperCase() === 'DISBURSED')
+    // Find if there is an approved or active loan
+    const activeApp = history.find(app => 
+      app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
     );
 
-    if (activeLoan) {
-      const principal = Number(activeLoan.loan_amount || 0);
-      const interestRate = 0.10; // 10%
-      const interestAmount = principal * interestRate;
-      const totalOutstanding = principal + interestAmount;
-
-      // Hydrate Active Loan / Payment Card
-      const principalEl = document.getElementById("statPrincipalLoan");
-      const totalOutstandingEl = document.getElementById("statTotalOutstanding");
-      const activeBalanceCardEl = document.getElementById("statActiveBalance");
-
-      if (principalEl) principalEl.textContent = `KSh ${principal.toLocaleString()}`;
-      if (totalOutstandingEl) totalOutstandingEl.textContent = `KSh ${totalOutstanding.toLocaleString()}`;
-      if (activeBalanceCardEl) activeBalanceCardEl.textContent = `KSh ${totalOutstanding.toLocaleString()}`;
+    // 1. Update Active Balance Card
+    if (activeApp) {
+      const principal = Number(activeApp.loan_amount || 0);
+      const totalDue = principal + (principal * 0.10); // 10% interest
+      
+      const activeBalEl = document.getElementById("statActiveBalance");
+      if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
     }
 
-    // Populate Application History Table
-    renderHistoryTable(history);
+    // 2. Update Latest Request Badge & Amount Card
+    const statusBadge = document.getElementById("statStatusBadge");
+    const requestedAmt = document.getElementById("statRequestedAmount");
+    
+    if (latestApp) {
+      if (statusBadge) {
+        statusBadge.textContent = latestApp.status;
+        statusBadge.className = `inline-block rounded-full px-3 py-1 text-xs font-bold ${
+          latestApp.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+        }`;
+      }
+      if (requestedAmt) {
+        requestedAmt.textContent = `Amount: KSh ${Number(latestApp.loan_amount).toLocaleString()}`;
+      }
+    }
+
+    // 3. Update Stepper Progress Bar
+    updateStepperProgress(latestApp ? latestApp.status : 'PENDING');
+
+    // 4. Render History Table
+    if (typeof renderHistoryTable === 'function') {
+      renderHistoryTable(history);
+    }
 
   } catch (err) {
-    console.error("Dashboard error:", err);
+    console.error("Error populating dashboard:", err);
   }
 }
 
-  function getBadgeClass(status) {
-    switch ((status || '').toLowerCase()) {
-      case 'approved':
-      case 'disbursed':
-        return 'inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800';
-      case 'under review':
-      case 'submitted':
-      case 'pending':
-        return 'inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800';
-      case 'rejected':
-        return 'inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800';
-      default:
-        return 'inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600';
-    }
-  }
+// Function to highlight stepper nodes dynamically
+function updateStepperProgress(status) {
+  const currentStatus = (status || '').toUpperCase();
+  
+  // Step mapping: PENDING -> Step 1 | REVIEW -> Step 2 | APPROVED -> Step 3 | DISBURSED -> Step 4
+  let stepLevel = 1;
+  if (currentStatus === 'UNDER REVIEW' || currentStatus === 'REVIEW') stepLevel = 2;
+  if (currentStatus === 'APPROVED') stepLevel = 3;
+  if (currentStatus === 'DISBURSED') stepLevel = 4;
 
-  function updateProgressStepper(status) {
-    const activeClass = 'bg-supreme-gold text-white';
-    const fill = byId('progressBarFill');
-    const s1 = byId('step1Circle');
-    const s2 = byId('step2Circle');
-    const s3 = byId('step3Circle');
-    const s4 = byId('step4Circle');
-
-    const st = (status || '').toLowerCase();
-
-    if (fill && s1) {
-      if (st === 'submitted' || st === 'pending') {
-        fill.style.width = '10%';
-        s1.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
-      } else if (st === 'under review') {
-        fill.style.width = '40%';
-        if (s1 && s2) s1.className = s2.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
-      } else if (st === 'approved') {
-        fill.style.width = '70%';
-        if (s1 && s2 && s3) s1.className = s2.className = s3.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
-      } else if (st === 'disbursed') {
-        fill.style.width = '100%';
-        if (s1 && s2 && s3 && s4) s1.className = s2.className = s3.className = s4.className = `flex h-10 w-10 items-center justify-center rounded-full ${activeClass} ring-4 ring-white`;
+  const steps = [1, 2, 3, 4];
+  steps.forEach(num => {
+    const stepNode = document.getElementById(`stepNode${num}`);
+    if (stepNode) {
+      if (num <= stepLevel) {
+        stepNode.classList.remove('bg-slate-200', 'text-slate-500');
+        stepNode.classList.add('bg-emerald-600', 'text-white');
+      } else {
+        stepNode.classList.remove('bg-emerald-600', 'text-white');
+        stepNode.classList.add('bg-slate-200', 'text-slate-500');
       }
     }
-  }
+  });
+}
+
 
   // Execute
   loadDashboardData();
