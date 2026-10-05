@@ -300,21 +300,28 @@
       const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
+      // Handle expired or invalid JWT token (403/401)
+      if (res.status === 403 || res.status === 401) {
+        console.warn("Session expired or token invalid. Redirecting to login...");
+        localStorage.removeItem("supreme_user_token");
+        window.location.href = "index.html"; // or login.html
+        return;
+      }
+      if (!res.ok) {
+        throw new Error(`Server returned status ${res.status}`);
+      }
+      console.log("Fetching dashboard data...");
+      console.log("Request Headers:", res.headers);
 
-      const data = await res.json();
-      console.log("Backend Data Payload:", data);
-
-      if (!data.success || !data.applicationsHistory || data.applicationsHistory.length === 0) return;
-
+      if (!data.sucess || !data.applicationsHistory || data.applicationsHistory.length === 0)return;
       const history = data.applicationsHistory;
-      
-      // Grab the most recent application submitted
-      const latestApp = history[0]; 
 
-      // Find if there is an approved or active loan
+      const latestApp = history[0]; // Most recent application
+
       const activeApp = history.find(app => 
         app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
       );
+        
 
       // 1. Update Active Balance Card
       if (activeApp) {
