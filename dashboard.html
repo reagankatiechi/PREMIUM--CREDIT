@@ -302,26 +302,36 @@ async function loadDashboardData() {
       return;
     }
 
-    // All await statements MUST stay inside this function body
     const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
-      headers: { "Authorization": `Bearer ${token}` }
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
     });
 
+    // Handle expired/invalid JWT token
     if (res.status === 403 || res.status === 401) {
+      console.warn("Session expired. Redirecting to login...");
       localStorage.removeItem("supreme_user_token");
+      localStorage.removeItem("token");
       window.location.href = "index.html";
       return;
+    }
+
+    if (!res.ok) {
+      throw new Error(`Server returned HTTP ${res.status}`);
     }
 
     const data = await res.json();
     console.log("Backend Data Payload:", data);
 
-    if (!data.success || !data.applicationsHistory) return;
+    if (!data.success || !data.applicationsHistory || data.applicationsHistory.length === 0) {
+      return;
+    }
 
     const history = data.applicationsHistory;
     const latestApp = history[0];
 
-    // Hydrate Active Balance
+    // 1. Update Active Balance
     const activeApp = history.find(app => 
       app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
     );
@@ -333,7 +343,7 @@ async function loadDashboardData() {
       if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
     }
 
-    // Hydrate Latest Request & Status
+    // 2. Update Latest Request Card
     const statusBadge = document.getElementById("statStatusBadge");
     const requestedAmt = document.getElementById("statRequestedAmount");
     
@@ -349,17 +359,15 @@ async function loadDashboardData() {
       }
     }
 
+    // 3. Render History Table
     if (typeof renderHistoryTable === 'function') {
       renderHistoryTable(history);
     }
 
   } catch (err) {
     console.error("Error populating dashboard:", err);
-  } // Function properly closes HERE after all await calls
+  }
 }
-
-// Automatically invoke function on page load
-document.addEventListener("DOMContentLoaded", loadDashboardData);
   try {
     const token = localStorage.getItem("token") || localStorage.getItem("authToken");
 
