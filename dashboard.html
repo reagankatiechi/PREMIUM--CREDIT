@@ -204,25 +204,26 @@
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <h2 class="font-['Outfit'] text-xl font-bold text-supreme-800">Application History</h2>
           <p class="mt-1 text-xs text-slate-500">Overview of all loan requests submitted from this account.</p>
-
-          <div class="mt-6 overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase tracking-wider">
+          <!-- Application History Table Container -->
+           <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="bg-slate-100 text-xs font-bold uppercase text-slate-500">
                 <tr>
-                  <th class="p-3">Date</th>
-                  <th class="p-3">Amount</th>
-                  <th class="p-3">Period</th>
-                  <th class="p-3">Status</th>
+                  <th class="px-4 py-3">Date</th>
+                  <th class="px-4 py-3">Amount</th>
+                  <th class="px-4 py-3">Period</th>
+                  <th class="px-4 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody id="historyTableBody" class="divide-y divide-slate-100">
+              <tbody id="historyTableBody">
                 <tr>
-                  <td colspan="4" class="p-4 text-center text-slate-400">Loading history...</td>
+                  <td colspan="4" class="px-4 py-6 text-center text-slate-400">Loading history...</td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
+
+          
       </div>
 
     </div>
@@ -261,131 +262,116 @@
   </div>
   <script>
   const API_BASE_URL = "https://premium-credit.onrender.com";
-
   async function loadDashboardData() {
-    try {
-      const token = localStorage.getItem("supreme_user_token") || localStorage.getItem("token");
+  try {
+    const token = localStorage.getItem("supreme_user_token");
+    if (!token) {
+      window.location.href = "index.html";
+      return;
+    }
 
-      if (!token) {
-        window.location.href = "index.html";
-        return;
+    const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
       }
+    });
 
-      const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+    if (!res.ok) throw new Error("Failed to load dashboard data");
 
-      if (res.status === 403 || res.status === 401) {
-        localStorage.removeItem("supreme_user_token");
-        localStorage.removeItem("token");
-        window.location.href = "index.html";
-        return;
+    const data = await res.json();
+    console.log("Backend Data Payload:", data);
+
+    // 1. Populate Header User Details
+    const rawUserData = localStorage.getItem("supreme_user_data");
+    let storedName = "User Account";
+    let storedPhone = "";
+    let profilePicUrl = "";
+
+    if (rawUserData) {
+      try {
+        const parsedUser = JSON.parse(rawUserData);
+        storedName = parsedUser.fullName || parsedUser.full_name || "User Account";
+        storedPhone = parsedUser.phone || "";
+        profilePicUrl = parsedUser.passportUrl || parsedUser.profilePic || parsedUser.profile_pic || parsedUser.avatar || "";
+      } catch (e) {
+        console.error("Error parsing user data:", e);
       }
+    }
 
-      if (!res.ok) {
-        throw new Error(`Server status ${res.status}`);
+    const navUserName = document.getElementById("navUserName");
+    const navUserPhone = document.getElementById("navUserPhone");
+    const navUserAvatar = document.getElementById("navUserAvatar");
+
+    if (navUserName) navUserName.textContent = storedName;
+    if (navUserPhone) navUserPhone.textContent = storedPhone;
+
+    if (navUserAvatar) {
+      if (profilePicUrl) {
+        const fullImgUrl = profilePicUrl.startsWith("http") 
+          ? profilePicUrl 
+          : `${API_BASE_URL}${profilePicUrl.startsWith('/') ? '' : '/'}${profilePicUrl}`;
+        navUserAvatar.src = fullImgUrl;
+        navUserAvatar.style.display = "block";
+      } else {
+        navUserAvatar.style.display = "none";
       }
+    }
 
-      const data = await res.json();
-      console.log("Backend Data Payload:", data);
+    // 2. Populate Overview Stats Cards
+    const statusBadge = document.getElementById("statStatusBadge");
+    const requestedAmt = document.getElementById("statRequestedAmount");
 
-      // Read saved user data from localStorage
-      const rawUserData = localStorage.getItem("supreme_user_data");
-      let storedName = "User Account";
-      let storedPhone = "";
-      let profilePicUrl = "";
+    if (statusBadge) statusBadge.textContent = data.loanStatus || "No Application";
+    if (requestedAmt) {
+      const latestAmount = data.LatestApplication?.amount || (data.applicationsHistory && data.applicationsHistory[0]?.amount);
+      requestedAmt.textContent = latestAmount ? `Amount: KSh ${Number(latestAmount).toLocaleString()}` : "Amount: KSh 0";
+    }
 
-      if (rawUserData) {
-        try {
-          const parsedUser = JSON.parse(rawUserData);
-          storedName = parsedUser.fullName || parsedUser.full_name || "User Account";
-          storedPhone = parsedUser.phone || "";
-          // Check common field names returned during registration/login
-          profilePicUrl = parsedUser.passportUrl || parsedUser.profilePic || parsedUser.profile_pic || parsedUser.avatar || "";
-        } catch (e) {
-          console.error("Error parsing user data:", e);
-        }
-      }
-
-      // Update text fields
-      const navUserName = document.getElementById("navUserName");
-      const navUserPhone = document.getElementById("navUserPhone");
-      const navUserAvatar = document.getElementById("navUserAvatar");
-
-      if (navUserName) navUserName.textContent = storedName;
-      if (navUserPhone) navUserPhone.textContent = storedPhone;
-
-      // Render profile image if present
-      if (navUserAvatar) {
-        if (profilePicUrl) {
-          const fullImgUrl = profilePicUrl.startsWith("http") 
-            ? profilePicUrl 
-            : `${API_BASE_URL}${profilePicUrl.startsWith('/') ? '' : '/'}${profilePicUrl}`;
-            
-          navUserAvatar.src = fullImgUrl;
-          navUserAvatar.style.display = "block";
-        } else {
-          navUserAvatar.style.display = "none";
-        }
-      }
-
-      
-
-      // Handle empty application history safely
+    // 3. Render Application History Table
+    const tableBody = document.getElementById("historyTableBody");
+    if (tableBody) {
       if (!data.applicationsHistory || data.applicationsHistory.length === 0) {
-        const statusBadge = document.getElementById("statStatusBadge");
-        const requestedAmt = document.getElementById("statRequestedAmount");
-        
-        if (statusBadge) {
-          statusBadge.textContent = data.loanStatus || "No Application";
-        }
-        if (requestedAmt) {
-          requestedAmt.textContent = "Amount: KSh 0";
-        }
-        return;
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="4" class="px-4 py-6 text-center text-slate-400">No application history found.</td>
+          </tr>`;
+      } else {
+        tableBody.innerHTML = data.applicationsHistory.map(app => {
+          const dateStr = app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "---";
+          const amount = app.amount ? `KSh ${Number(app.amount).toLocaleString()}` : "KSh 0";
+          const period = app.repaymentPeriod ? `${app.repaymentPeriod} Months` : (app.period || "---");
+          
+          let badgeColor = "bg-yellow-100 text-yellow-800";
+          if (app.status?.toLowerCase() === "approved") badgeColor = "bg-green-100 text-green-800";
+          if (app.status?.toLowerCase() === "rejected") badgeColor = "bg-red-100 text-red-800";
+
+          return `
+            <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+              <td class="px-4 py-3 font-medium text-slate-700">${dateStr}</td>
+              <td class="px-4 py-3 font-bold text-slate-800">${amount}</td>
+              <td class="px-4 py-3 text-slate-600">${period}</td>
+              <td class="px-4 py-3">
+                <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${badgeColor}">
+                  ${app.status || "Pending"}
+                </span>
+              </td>
+            </tr>
+          `;
+        }).join("");
       }
+    }
 
-      // Populate application data if history exists
-      const history = data.applicationsHistory;
-      const latestApp = history[0];
-
-      const activeApp = history.find(app => 
-        app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
-      );
-
-      if (activeApp) {
-        const principal = Number(activeApp.loan_amount || 0);
-        const totalDue = principal + (principal * 0.10);
-        const activeBalEl = document.getElementById("statActiveBalance");
-        if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
-      }
-
-      const statusBadge = document.getElementById("statStatusBadge");
-      const requestedAmt = document.getElementById("statRequestedAmount");
-      
-      if (latestApp) {
-        if (statusBadge) {
-          statusBadge.textContent = latestApp.status;
-          statusBadge.className = `inline-block rounded-full px-3 py-1 text-xs font-bold ${
-            latestApp.status.toUpperCase() === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-          }`;
-        }
-        if (requestedAmt) {
-          requestedAmt.textContent = `Amount: KSh ${Number(latestApp.loan_amount).toLocaleString()}`;
-        }
-      }
-
-      if (typeof renderHistoryTable === 'function') {
-        renderHistoryTable(history);
-      }
-
-    } catch (err) {
-      console.error("Error populating dashboard:", err);
+  } catch (err) {
+    console.error("Dashboard error:", err);
+    const tableBody = document.getElementById("historyTableBody");
+    if (tableBody) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="4" class="px-4 py-6 text-center text-red-500">Failed to load history records.</td>
+        </tr>`;
     }
   }
-
+}
   document.addEventListener("DOMContentLoaded", loadDashboardData);
 </script>
 
