@@ -286,19 +286,32 @@
       const data = await res.json();
       console.log("Backend Data Payload:", data);
 
-      // Get user info from localStorage or token
-      const storedName = localStorage.getItem("supreme_user_name") || "User Account";
-      const storedPhone = localStorage.getItem("supreme_user_phone") || "";
+      // Retrieve and parse user data saved from index.html
+      const rawUserData = localStorage.getItem("supreme_user_data");
+      let storedName = "User Account";
+      let storedPhone = "";
 
-      // 1. Target exact header IDs from lines 48-51
+      if (rawUserData) {
+        try {
+          const parsedUser = JSON.parse(rawUserData);
+          storedName = parsedUser.fullName || parsedUser.full_name || "User Account";
+          storedPhone = parsedUser.phone || "";
+        } catch (e) {
+          console.error("Error parsing user data:", e);
+        }
+      }
+
+      // Target header elements
       const navUserName = document.getElementById("navUserName");
       const navUserPhone = document.getElementById("navUserPhone");
       const navUserAvatar = document.getElementById("navUserAvatar");
 
       if (navUserName) navUserName.textContent = storedName;
       if (navUserPhone) navUserPhone.textContent = storedPhone;
-      if (navUserAvatar && storedName) {
-        navUserAvatar.textContent = storedName.charAt(0).toUpperCase();
+      
+      // Hide avatar element
+      if (navUserAvatar) {
+        navUserAvatar.style.display = "none";
       }
 
       
