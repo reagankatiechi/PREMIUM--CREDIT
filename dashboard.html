@@ -48,9 +48,14 @@
           <p id="navUserName" class="text-sm font-bold text-supreme-800">Loading...</p>
           <p id="navUserPhone" class="text-xs text-slate-500">---</p>
         </div>
-        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-supreme-800 font-bold text-white shadow" id="navUserAvatar">
-          U
-        </div>
+        <img 
+        id="navUserAvatar" 
+        src="" 
+        alt="Profile" 
+        class="h-10 w-10 rounded-full object-cover border border-slate-200 shadow"
+        style="display: none;"
+        onerror="this.style.display='none';" 
+        />
         <button id="logoutBtn" class="ml-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"></button>
           Sign Out
         </button>
@@ -286,32 +291,44 @@
       const data = await res.json();
       console.log("Backend Data Payload:", data);
 
-      // Retrieve and parse user data saved from index.html
+      // Read saved user data from localStorage
       const rawUserData = localStorage.getItem("supreme_user_data");
       let storedName = "User Account";
       let storedPhone = "";
+      let profilePicUrl = "";
 
       if (rawUserData) {
         try {
           const parsedUser = JSON.parse(rawUserData);
           storedName = parsedUser.fullName || parsedUser.full_name || "User Account";
           storedPhone = parsedUser.phone || "";
+          // Check common field names returned during registration/login
+          profilePicUrl = parsedUser.passportUrl || parsedUser.profilePic || parsedUser.profile_pic || parsedUser.avatar || "";
         } catch (e) {
           console.error("Error parsing user data:", e);
         }
       }
 
-      // Target header elements
+      // Update text fields
       const navUserName = document.getElementById("navUserName");
       const navUserPhone = document.getElementById("navUserPhone");
       const navUserAvatar = document.getElementById("navUserAvatar");
 
       if (navUserName) navUserName.textContent = storedName;
       if (navUserPhone) navUserPhone.textContent = storedPhone;
-      
-      // Hide avatar element
+
+      // Render profile image if present
       if (navUserAvatar) {
-        navUserAvatar.style.display = "none";
+        if (profilePicUrl) {
+          const fullImgUrl = profilePicUrl.startsWith("http") 
+            ? profilePicUrl 
+            : `${API_BASE_URL}${profilePicUrl.startsWith('/') ? '' : '/'}${profilePicUrl}`;
+            
+          navUserAvatar.src = fullImgUrl;
+          navUserAvatar.style.display = "block";
+        } else {
+          navUserAvatar.style.display = "none";
+        }
       }
 
       
