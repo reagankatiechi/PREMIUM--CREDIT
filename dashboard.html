@@ -256,6 +256,82 @@
   </div>
 
 <script>
+  // Global API Base URL definition
+  const API_BASE_URL = "https://premium-credit.onrender.com";
+
+  async function loadDashboardData() {
+    try {
+      const token = localStorage.getItem("supreme_user_token") || localStorage.getItem("token");
+
+      if (!token) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (res.status === 403 || res.status === 401) {
+        localStorage.removeItem("supreme_user_token");
+        localStorage.removeItem("token");
+        window.location.href = "index.html";
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error(`Server status ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Backend Data Payload:", data);
+
+      if (!data.success || !data.applicationsHistory || data.applicationsHistory.length === 0) {
+        return;
+      }
+
+      const history = data.applicationsHistory;
+      const latestApp = history[0];
+
+      const activeApp = history.find(app => 
+        app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
+      );
+
+      if (activeApp) {
+        const principal = Number(activeApp.loan_amount || 0);
+        const totalDue = principal + (principal * 0.10);
+        const activeBalEl = document.getElementById("statActiveBalance");
+        if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
+      }
+
+      const statusBadge = document.getElementById("statStatusBadge");
+      const requestedAmt = document.getElementById("statRequestedAmount");
+      
+      if (latestApp) {
+        if (statusBadge) {
+          statusBadge.textContent = latestApp.status;
+          statusBadge.className = `inline-block rounded-full px-3 py-1 text-xs font-bold ${
+            latestApp.status.toUpperCase() === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+          }`;
+        }
+        if (requestedAmt) {
+          requestedAmt.textContent = `Amount: KSh ${Number(latestApp.loan_amount).toLocaleString()}`;
+        }
+      }
+
+      if (typeof renderHistoryTable === 'function') {
+        renderHistoryTable(history);
+      }
+
+    } catch (err) {
+      console.error("Error populating dashboard:", err);
+    }
+  } // Function MUST close HERE, after all awaits
+
+  document.addEventListener("DOMContentLoaded", loadDashboardData);
+</script>
   const API_BASE_URL = 'https://premium-credit.onrender.com';
   const byId = id => document.getElementById(id);
 
