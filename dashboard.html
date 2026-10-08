@@ -286,66 +286,63 @@
       }
 
       const data = await res.json();
-      console.log("Backend Data Payload:", data);
-      // Update User Profile Information in Header & Welcome Banner
-    if (data.user) {
-      const userName = data.user.fullName || data.user.name || "User";
-      const userPhone = data.user.phone || "";
+    console.log("Backend Data Payload:", data);
 
-      // Welcome Banner
-      const welcomeEl = document.querySelector("h1, .welcome-text"); 
-      if (welcomeEl) welcomeEl.textContent = `Welcome back, ${userName}!`;
-
-      // Header Profile Name & Phone
-      const profileNameEl = document.getElementById("profileName") || document.querySelector(".Loading");
-      if (profileNameEl) profileNameEl.textContent = userName;
-
-      const profilePhoneEl = document.getElementById("profilePhone");
-      if (profilePhoneEl) profilePhoneEl.textContent = userPhone;
-
-      // Avatar Letter Circle
-      const avatarEl = document.querySelector(".rounded-full.bg-emerald-800, .bg-slate-700");
-      if (avatarEl && userName) {
-        avatarEl.textContent = userName.charAt(0).toUpperCase();
-      }
+    // 1. Clear "Loading..." in header using activeBalance/loanStatus or stored user data
+    const profileNameEl = document.querySelector(".Loading") || document.getElementById("profileName");
+    if (profileNameEl) {
+      // Decode JWT token or fallback to localStorage name if stored
+      const savedName = localStorage.getItem("supreme_user_name") || "User Account";
+      profileNameEl.textContent = savedName;
     }
 
-      if (!data.success || !data.applicationsHistory || data.applicationsHistory.length === 0) {
-        return;
-      }
-
-      const history = data.applicationsHistory;
-      const latestApp = history[0];
-
-      const activeApp = history.find(app => 
-        app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
-      );
-
-      if (activeApp) {
-        const principal = Number(activeApp.loan_amount || 0);
-        const totalDue = principal + (principal * 0.10);
-        const activeBalEl = document.getElementById("statActiveBalance");
-        if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
-      }
-
+    // 2. Handle cases where the user has no applications yet (Array length is 0)
+    if (!data.applicationsHistory || data.applicationsHistory.length === 0) {
       const statusBadge = document.getElementById("statStatusBadge");
       const requestedAmt = document.getElementById("statRequestedAmount");
       
-      if (latestApp) {
-        if (statusBadge) {
-          statusBadge.textContent = latestApp.status;
-          statusBadge.className = `inline-block rounded-full px-3 py-1 text-xs font-bold ${
-            latestApp.status.toUpperCase() === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-          }`;
-        }
-        if (requestedAmt) {
-          requestedAmt.textContent = `Amount: KSh ${Number(latestApp.loan_amount).toLocaleString()}`;
-        }
+      if (statusBadge) {
+        statusBadge.textContent = data.loanStatus || "No Application";
       }
+      if (requestedAmt) {
+        requestedAmt.textContent = "Amount: KSh 0";
+      }
+      return; // Stop here if no history exists
+    }
 
-      if (typeof renderHistoryTable === 'function') {
-        renderHistoryTable(history);
+    // 3. Populate history & active balances if applications DO exist
+    const history = data.applicationsHistory;
+    const latestApp = history[0];
+
+    const activeApp = history.find(app => 
+      app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
+    );
+
+    if (activeApp) {
+      const principal = Number(activeApp.loan_amount || 0);
+      const totalDue = principal + (principal * 0.10);
+      const activeBalEl = document.getElementById("statActiveBalance");
+      if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
+    }
+
+    const statusBadge = document.getElementById("statStatusBadge");
+    const requestedAmt = document.getElementById("statRequestedAmount");
+    
+    if (latestApp) {
+      if (statusBadge) {
+        statusBadge.textContent = latestApp.status;
+        statusBadge.className = `inline-block rounded-full px-3 py-1 text-xs font-bold ${
+          latestApp.status.toUpperCase() === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+        }`;
       }
+      if (requestedAmt) {
+        requestedAmt.textContent = `Amount: KSh ${Number(latestApp.loan_amount).toLocaleString()}`;
+      }
+    }
+
+    if (typeof renderHistoryTable === 'function') {
+      renderHistoryTable(history);
+    }
 
     } catch (err) {
       console.error("Error populating dashboard:", err);
