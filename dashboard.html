@@ -287,6 +287,28 @@
 
       const data = await res.json();
       console.log("Backend Data Payload:", data);
+      // Update User Profile Information in Header & Welcome Banner
+    if (data.user) {
+      const userName = data.user.fullName || data.user.name || "User";
+      const userPhone = data.user.phone || "";
+
+      // Welcome Banner
+      const welcomeEl = document.querySelector("h1, .welcome-text"); 
+      if (welcomeEl) welcomeEl.textContent = `Welcome back, ${userName}!`;
+
+      // Header Profile Name & Phone
+      const profileNameEl = document.getElementById("profileName") || document.querySelector(".Loading");
+      if (profileNameEl) profileNameEl.textContent = userName;
+
+      const profilePhoneEl = document.getElementById("profilePhone");
+      if (profilePhoneEl) profilePhoneEl.textContent = userPhone;
+
+      // Avatar Letter Circle
+      const avatarEl = document.querySelector(".rounded-full.bg-emerald-800, .bg-slate-700");
+      if (avatarEl && userName) {
+        avatarEl.textContent = userName.charAt(0).toUpperCase();
+      }
+    }
 
       if (!data.success || !data.applicationsHistory || data.applicationsHistory.length === 0) {
         return;
