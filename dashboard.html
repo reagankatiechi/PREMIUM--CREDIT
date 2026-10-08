@@ -51,7 +51,7 @@
         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-supreme-800 font-bold text-white shadow" id="navUserAvatar">
           U
         </div>
-        <button id="logoutBtn" clavatarContainerss="ml-2 rounded-xl border border-slconst avatarContainerte-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-red-50 hover:text-red-600">
+        <button id="logoutBtn" class="ml-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"></button>
           Sign Out
         </button>
       </div>
@@ -286,12 +286,22 @@
       const data = await res.json();
       console.log("Backend Data Payload:", data);
 
-      // Fix "Loading..." text in top header
-      const storedUser = localStorage.getItem("supreme_user_name") || "User Account";
-      const headerNameEl = document.querySelector(".Loading") || document.getElementById("profileName");
-      if (headerNameEl) {
-        headerNameEl.textContent = storedUser;
+      // Get user info from localStorage or token
+      const storedName = localStorage.getItem("supreme_user_name") || "User Account";
+      const storedPhone = localStorage.getItem("supreme_user_phone") || "";
+
+      // 1. Target exact header IDs from lines 48-51
+      const navUserName = document.getElementById("navUserName");
+      const navUserPhone = document.getElementById("navUserPhone");
+      const navUserAvatar = document.getElementById("navUserAvatar");
+
+      if (navUserName) navUserName.textContent = storedName;
+      if (navUserPhone) navUserPhone.textContent = storedPhone;
+      if (navUserAvatar && storedName) {
+        navUserAvatar.textContent = storedName.charAt(0).toUpperCase();
       }
+
+      
 
       // Handle empty application history safely
       if (!data.applicationsHistory || data.applicationsHistory.length === 0) {
