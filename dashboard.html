@@ -293,72 +293,85 @@
     window.location.href = 'index.html';
   });
   async function loadDashboardData() {
-    try {
-      const token = localStorage.getItem("supreme_user_token");
-      if (!token) throw new Error("No auth token found.");
+  try {
+    console.log("Fetching dashboard data...");
+    const token = localStorage.getItem("supreme_user_token") || localStorage.getItem("token");
 
-      const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      // Handle expired or invalid JWT token (403/401)
-      if (res.status === 403 || res.status === 401) {
-        console.warn("Session expired or token invalid. Redirecting to login...");
-        localStorage.removeItem("supreme_user_token");
-        window.location.href = "index.html"; // or login.html
-        return;
-      }
-      if (!res.ok) {
-        throw new Error(`Server returned status ${res.status}`);
-      }
-      console.log("Fetching dashboard data...");
-      console.log("Request Headers:", res.headers);
-
-      if (!data.sucess || !data.applicationsHistory || data.applicationsHistory.length === 0)return;
-      const history = data.applicationsHistory;
-
-      const latestApp = history[0]; // Most recent application
-
-      const activeApp = history.find(app => 
-        app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
-      );
-        
-
-      // 1. Update Active Balance Card
-      if (activeApp) {
-        const principal = Number(activeApp.loan_amount || 0);
-        const totalDue = principal + (principal * 0.10); // 10% interest
-        
-        const activeBalEl = byId("statActiveBalance");
-        if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
-      }
-
-      // 2. Update Latest Request Badge & Amount Card
-      const statusBadge = byId("statStatusBadge");
-      const requestedAmt = byId("statRequestedAmount");
-      
-      if (latestApp) {
-        if (statusBadge) {
-          statusBadge.textContent = latestApp.status;
-          statusBadge.className = `inline-block rounded-full px-3 py-1 text-xs font-bold ${
-            latestApp.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-          }`;
-        }
-        if (requestedAmt) {
-          requestedAmt.textContent = `Amount: KSh ${Number(latestApp.loan_amount).toLocaleString()}`;
-        }
-      }
-
-      // 3. Update Stepper Progress Bar
-      updateStepperProgress(latestApp ? latestApp.status : 'PENDING');
-
-      // 4. Render History Table
-      if (typeof renderHistoryTable === 'function') {
-        renderHistoryTable(history);
-      }
-
-    } catch (err) {
-      console.error("Error populating dashboard:", err);
+    if (!token) {
+      console.warn("No authentication token found. Redirecting to login...");
+      window.location.href = "index.html"; // Adjust to your login filename if different
+      return;
     }
+
+    const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    // 1. Check for expired/unauthorized token first
+    if (res.status === 403 || res.status === 401) {
+      console.warn("Session expired or token invalid. Redirecting to login...");
+      localStorage.removeItem("supreme_user_token");
+      localStorage.removeItem("token");
+      window.location.href = "index.html";
+      return;
+    }
+
+    if (!res.ok) {
+      throw new Error(`Server returned status ${res.status}`);
+    }
+
+    // 2. Parse response JSON safely after status checks
+    const data = await res.json();
+    console.log("Backend Data Payload:", data);
+
+    if (!data.success || !data.applicationsHistory || data.applicationsHistory.length === 0) {
+      return;
+    }
+
+    const history = data.applicationsHistory;
+    const latestApp = history[0];
+
+    // Find latest approved or active application
+    const activeApp = history.find(app => 
+      app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
+    );
+
+    // 3. Hydrate Active Balance Card
+    if (activeApp) {
+      const principal = Number(activeApp.loan_amount || 0);
+      const totalDue = principal + (principal * 0.10); // 10% interest
+      
+      const activeBalEl = document.getElementById("statActiveBalance");
+      if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
+    }
+
+    // 4. Hydrate Latest Request Details
+    if (latestApp) {
+      const statusBadge = document.getElementById("statStatusBadge");
+      const requestedAmt = document.getElementById("statRequestedAmount");
+
+      if (statusBadge) {
+        statusBadge.textContent = latestApp.status;
+        statusBadge.className = `inline-block rounded-full px-3 py-1 text-xs font-bold ${
+          latestApp.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+        }`;
+      }
+      if (requestedAmt) {
+        requestedAmt.textContent = `Amount: KSh ${Number(latestApp.loan_amount).toLocaleString()}`;
+      }
+    }
+
+    // 5. Render History Table if helper exists
+    if (typeof renderHistoryTable === 'function') {
+      renderHistoryTable(history);
+    }
+
+  } catch (err) {
+    console.error("Error populating dashboard:", err);
+  }
+}
   try {
     const token = localStorage.getItem("token") || localStorage.getItem("authToken");
 
@@ -417,7 +430,6 @@
   } catch (err) {
     console.error("Error populating dashboard:", err);
   }
-}
 
 // Function to highlight stepper nodes dynamically
 function updateStepperProgress(status) {
