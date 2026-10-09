@@ -317,33 +317,61 @@
       }
     }
 
-    // 2. Populate Overview Stats Cards
+    const history = data.applicationsHistory || [];
+    const latestApp = data.latestApplication || history[0];
+
+    // 2. Update Header Overview Cards
     const statusBadge = document.getElementById("statStatusBadge");
     const requestedAmt = document.getElementById("statRequestedAmount");
 
-    if (statusBadge) statusBadge.textContent = data.loanStatus || "No Application";
+    if (statusBadge) statusBadge.textContent = data.loanStatus || (latestApp ? latestApp.status : "No Application");
     if (requestedAmt) {
-      const latestAmount = data.LatestApplication?.amount || (data.applicationsHistory && data.applicationsHistory[0]?.amount);
-      requestedAmt.textContent = latestAmount ? `Amount: KSh ${Number(latestAmount).toLocaleString()}` : "Amount: KSh 0";
+      const amtVal = latestApp ? (latestApp.loan_amount || latestApp.amount || 0) : 0;
+      requestedAmt.textContent = `Amount: KSh ${Number(amtVal).toLocaleString()}`;
     }
 
-    // 3. Render Application History Table
+    // 3. Update Application Progress Stepper
+    if (latestApp) {
+      const refEl = document.getElementById("appRefNumber") || document.querySelector("[id*='Ref']");
+      if (refEl) {
+        refEl.textContent = `REF: #${latestApp.id || latestApp.application_id || '---'}`;
+      }
+
+      const status = (latestApp.status || '').toUpperCase();
+      let activeStep = 1; // Default: Submitted
+
+      if (['PENDING', 'UNDER REVIEW', 'REVIEW'].includes(status)) activeStep = 2;
+      if (['APPROVED'].includes(status)) activeStep = 3;
+      if (['DISBURSED', 'PAID', 'COMPLETED'].includes(status)) activeStep = 4;
+
+      updateStepperUI(activeStep);
+    }
+
+    // 4. Render Application History Table (handling DB snake_case & camelCase)
     const tableBody = document.getElementById("historyTableBody");
     if (tableBody) {
-      if (!data.applicationsHistory || data.applicationsHistory.length === 0) {
+      if (history.length === 0) {
         tableBody.innerHTML = `
           <tr>
             <td colspan="4" class="px-4 py-6 text-center text-slate-400">No application history found.</td>
           </tr>`;
       } else {
-        tableBody.innerHTML = data.applicationsHistory.map(app => {
-          const dateStr = app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "---";
-          const amount = app.amount ? `KSh ${Number(app.amount).toLocaleString()}` : "KSh 0";
-          const period = app.repaymentPeriod ? `${app.repaymentPeriod} Months` : (app.period || "---");
-          
-          let badgeColor = "bg-yellow-100 text-yellow-800";
-          if (app.status?.toLowerCase() === "approved") badgeColor = "bg-green-100 text-green-800";
-          if (app.status?.toLowerCase() === "rejected") badgeColor = "bg-red-100 text-red-800";
+        tableBody.innerHTML = history.map(app => {
+          // Extract variables with fallbacks for Supabase snake_case field names
+          const rawDate = app.created_at || app.createdAt || app.applied_at;
+          const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : "---";
+
+          const rawAmount = app.loan_amount || app.amount || app.requested_amount || 0;
+          const amount = `KSh ${Number(rawAmount).toLocaleString()}`;
+
+          const rawPeriod = app.repayment_period || app.repaymentPeriod || app.period || app.duration;
+          const period = rawPeriod ? `${rawPeriod} Months` : "---";
+
+          const appStatus = app.status || "Pending";
+          let badgeColor = "bg-amber-100 text-amber-800";
+          if (appStatus.toUpperCase() === "APPROVED") badgeColor = "bg-emerald-100 text-emerald-800";
+          if (appStatus.toUpperCase() === "DISBURSED") badgeColor = "bg-blue-100 text-blue-800";
+          if (appStatus.toUpperCase() === "REJECTED") badgeColor = "bg-rose-100 text-rose-800";
 
           return `
             <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
@@ -352,7 +380,7 @@
               <td class="px-4 py-3 text-slate-600">${period}</td>
               <td class="px-4 py-3">
                 <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${badgeColor}">
-                  ${app.status || "Pending"}
+                  ${appStatus}
                 </span>
               </td>
             </tr>
@@ -363,16 +391,23 @@
 
   } catch (err) {
     console.error("Dashboard error:", err);
-    const tableBody = document.getElementById("historyTableBody");
-    if (tableBody) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="4" class="px-4 py-6 text-center text-red-500">Failed to load history records.</td>
-        </tr>`;
-    }
   }
 }
-  document.addEventListener("DOMContentLoaded", loadDashboardData);
+
+// Helper function to highlight the active step in the progress bar
+function updateStepperUI(stepNumber) {
+  const steps = document.querySelectorAll(".stepper-step, [data-step]");
+  steps.forEach((step, index) => {
+    const stepIdx = index + 1;
+    if (stepIdx <= stepNumber) {
+      step.classList.add("bg-supreme-800", "text-white");
+      step.classList.remove("bg-slate-200", "text-slate-500");
+    } else {
+      step.classList.remove("bg-supreme-800", "text-white");
+      step.classList.add("bg-slate-200", "text-slate-500");
+    }
+  });
+}
 </script>
 
   <!-- REPAYMENT MODAL -->
