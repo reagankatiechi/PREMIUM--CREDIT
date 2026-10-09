@@ -262,152 +262,145 @@
   </div>
   <script>
   const API_BASE_URL = "https://premium-credit.onrender.com";
+
   async function loadDashboardData() {
-  try {
-    const token = localStorage.getItem("supreme_user_token");
-    if (!token) {
-      window.location.href = "index.html";
-      return;
-    }
+    try {
+      const token = localStorage.getItem("supreme_user_token") || localStorage.getItem("token");
 
-    const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) throw new Error("Failed to load dashboard data");
-
-    const data = await res.json();
-    console.log("Backend Data Payload:", data);
-
-    // 1. Populate Header User Details
-    const rawUserData = localStorage.getItem("supreme_user_data");
-    let storedName = "User Account";
-    let storedPhone = "";
-    let profilePicUrl = "";
-
-    if (rawUserData) {
-      try {
-        const parsedUser = JSON.parse(rawUserData);
-        storedName = parsedUser.fullName || parsedUser.full_name || "User Account";
-        storedPhone = parsedUser.phone || "";
-        profilePicUrl = parsedUser.passportUrl || parsedUser.profilePic || parsedUser.profile_pic || parsedUser.avatar || "";
-      } catch (e) {
-        console.error("Error parsing user data:", e);
-      }
-    }
-
-    const navUserName = document.getElementById("navUserName");
-    const navUserPhone = document.getElementById("navUserPhone");
-    const navUserAvatar = document.getElementById("navUserAvatar");
-
-    if (navUserName) navUserName.textContent = storedName;
-    if (navUserPhone) navUserPhone.textContent = storedPhone;
-
-    if (navUserAvatar) {
-      if (profilePicUrl) {
-        const fullImgUrl = profilePicUrl.startsWith("http") 
-          ? profilePicUrl 
-          : `${API_BASE_URL}${profilePicUrl.startsWith('/') ? '' : '/'}${profilePicUrl}`;
-        navUserAvatar.src = fullImgUrl;
-        navUserAvatar.style.display = "block";
-      } else {
-        navUserAvatar.style.display = "none";
-      }
-    }
-
-    const history = data.applicationsHistory || [];
-    const latestApp = data.latestApplication || history[0];
-
-    // 2. Update Header Overview Cards
-    const statusBadge = document.getElementById("statStatusBadge");
-    const requestedAmt = document.getElementById("statRequestedAmount");
-
-    if (statusBadge) statusBadge.textContent = data.loanStatus || (latestApp ? latestApp.status : "No Application");
-    if (requestedAmt) {
-      const amtVal = latestApp ? (latestApp.loan_amount || latestApp.amount || 0) : 0;
-      requestedAmt.textContent = `Amount: KSh ${Number(amtVal).toLocaleString()}`;
-    }
-
-    // 3. Update Application Progress Stepper
-    if (latestApp) {
-      const refEl = document.getElementById("appRefNumber") || document.querySelector("[id*='Ref']");
-      if (refEl) {
-        refEl.textContent = `REF: #${latestApp.id || latestApp.application_id || '---'}`;
+      if (!token) {
+        window.location.href = "index.html";
+        return;
       }
 
-      const status = (latestApp.status || '').toUpperCase();
-      let activeStep = 1; // Default: Submitted
+      // 1. Populate Header Profile Details from localStorage
+      const rawUserData = localStorage.getItem("supreme_user_data");
+      let storedName = "User Account";
+      let storedPhone = "";
+      let profilePicUrl = "";
 
-      if (['PENDING', 'UNDER REVIEW', 'REVIEW'].includes(status)) activeStep = 2;
-      if (['APPROVED'].includes(status)) activeStep = 3;
-      if (['DISBURSED', 'PAID', 'COMPLETED'].includes(status)) activeStep = 4;
-
-      updateStepperUI(activeStep);
-    }
-
-    // 4. Render Application History Table (handling DB snake_case & camelCase)
-    const tableBody = document.getElementById("historyTableBody");
-    if (tableBody) {
-      if (history.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="4" class="px-4 py-6 text-center text-slate-400">No application history found.</td>
-          </tr>`;
-      } else {
-        tableBody.innerHTML = history.map(app => {
-          // Extract variables with fallbacks for Supabase snake_case field names
-          const rawDate = app.created_at || app.createdAt || app.applied_at;
-          const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : "---";
-
-          const rawAmount = app.loan_amount || app.amount || app.requested_amount || 0;
-          const amount = `KSh ${Number(rawAmount).toLocaleString()}`;
-
-          const rawPeriod = app.repayment_period || app.repaymentPeriod || app.period || app.duration;
-          const period = rawPeriod ? `${rawPeriod} Months` : "---";
-
-          const appStatus = app.status || "Pending";
-          let badgeColor = "bg-amber-100 text-amber-800";
-          if (appStatus.toUpperCase() === "APPROVED") badgeColor = "bg-emerald-100 text-emerald-800";
-          if (appStatus.toUpperCase() === "DISBURSED") badgeColor = "bg-blue-100 text-blue-800";
-          if (appStatus.toUpperCase() === "REJECTED") badgeColor = "bg-rose-100 text-rose-800";
-
-          return `
-            <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
-              <td class="px-4 py-3 font-medium text-slate-700">${dateStr}</td>
-              <td class="px-4 py-3 font-bold text-slate-800">${amount}</td>
-              <td class="px-4 py-3 text-slate-600">${period}</td>
-              <td class="px-4 py-3">
-                <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${badgeColor}">
-                  ${appStatus}
-                </span>
-              </td>
-            </tr>
-          `;
-        }).join("");
+      if (rawUserData) {
+        try {
+          const parsedUser = JSON.parse(rawUserData);
+          storedName = parsedUser.fullName || parsedUser.full_name || "User Account";
+          storedPhone = parsedUser.phone || "";
+          profilePicUrl = parsedUser.passportUrl || parsedUser.profilePic || parsedUser.profile_pic || parsedUser.avatar || "";
+        } catch (e) {
+          console.error("Error parsing user data:", e);
+        }
       }
-    }
 
-  } catch (err) {
-    console.error("Dashboard error:", err);
+      const navUserName = document.getElementById("navUserName");
+      const navUserPhone = document.getElementById("navUserPhone");
+      const navUserAvatar = document.getElementById("navUserAvatar");
+
+      if (navUserName) navUserName.textContent = storedName;
+      if (navUserPhone) navUserPhone.textContent = storedPhone;
+
+      if (navUserAvatar) {
+        if (profilePicUrl) {
+          const fullImgUrl = profilePicUrl.startsWith("http")
+            ? profilePicUrl
+            : `${API_BASE_URL}${profilePicUrl.startsWith('/') ? '' : '/'}${profilePicUrl}`;
+          navUserAvatar.src = fullImgUrl;
+          navUserAvatar.style.display = "block";
+        } else {
+          navUserAvatar.style.display = "none";
+        }
+      }
+
+      // 2. Fetch Dashboard Data from API
+      const res = await fetch(`${API_BASE_URL}/api/user/dashboard`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem("supreme_user_token");
+        window.location.href = "index.html";
+        return;
+      }
+
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+      const data = await res.json();
+      console.log("Backend Data Payload:", data);
+
+      const history = data.applicationsHistory || [];
+      const latestApp = data.latestApplication || history[0];
+
+      // 3. Update Overview Header Cards
+      const statusBadge = document.getElementById("statStatusBadge");
+      const requestedAmt = document.getElementById("statRequestedAmount");
+
+      if (statusBadge) {
+        statusBadge.textContent = data.loanStatus || (latestApp ? latestApp.status : "No Application");
+      }
+      
+      if (requestedAmt) {
+        const amtVal = latestApp ? (latestApp.loan_amount || latestApp.amount || 0) : 0;
+        requestedAmt.textContent = `Amount: KSh ${Number(amtVal).toLocaleString()}`;
+      }
+
+      // 4. Update Active Loan Balance Card
+      const activeApp = history.find(app => 
+        app.status && ['APPROVED', 'DISBURSED'].includes(app.status.toUpperCase())
+      );
+
+      if (activeApp) {
+        const principal = Number(activeApp.loan_amount || activeApp.amount || 0);
+        const totalDue = principal + (principal * 0.10);
+        const activeBalEl = document.getElementById("statActiveBalance");
+        if (activeBalEl) activeBalEl.textContent = `KSh ${totalDue.toLocaleString()}`;
+      }
+
+      // 5. Render Application History Table
+      const tableBody = document.getElementById("historyTableBody");
+      if (tableBody) {
+        if (history.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="4" class="px-4 py-6 text-center text-slate-400">No application history found.</td>
+            </tr>`;
+        } else {
+          tableBody.innerHTML = history.map(app => {
+            const rawDate = app.created_at || app.createdAt || app.applied_at;
+            const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : "---";
+
+            const rawAmount = app.loan_amount || app.amount || app.requested_amount || 0;
+            const amountStr = `KSh ${Number(rawAmount).toLocaleString()}`;
+
+            const rawPeriod = app.repayment_period || app.repaymentPeriod || app.period || app.duration;
+            const periodStr = rawPeriod ? `${rawPeriod} Months` : "---";
+
+            const appStatus = app.status || "Pending";
+            let badgeColor = "bg-amber-100 text-amber-800";
+            if (appStatus.toUpperCase() === "APPROVED") badgeColor = "bg-emerald-100 text-emerald-800";
+            if (appStatus.toUpperCase() === "DISBURSED") badgeColor = "bg-blue-100 text-blue-800";
+            if (appStatus.toUpperCase() === "REJECTED") badgeColor = "bg-rose-100 text-rose-800";
+
+            return `
+              <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                <td class="px-4 py-3 font-medium text-slate-700">${dateStr}</td>
+                <td class="px-4 py-3 font-bold text-slate-800">${amountStr}</td>
+                <td class="px-4 py-3 text-slate-600">${periodStr}</td>
+                <td class="px-4 py-3">
+                  <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${badgeColor}">
+                    ${appStatus}
+                  </span>
+                </td>
+              </tr>
+            `;
+          }).join("");
+        }
+      }
+
+    } catch (err) {
+      console.error("Dashboard population error:", err);
+    }
   }
-}
 
-// Helper function to highlight the active step in the progress bar
-function updateStepperUI(stepNumber) {
-  const steps = document.querySelectorAll(".stepper-step, [data-step]");
-  steps.forEach((step, index) => {
-    const stepIdx = index + 1;
-    if (stepIdx <= stepNumber) {
-      step.classList.add("bg-supreme-800", "text-white");
-      step.classList.remove("bg-slate-200", "text-slate-500");
-    } else {
-      step.classList.remove("bg-supreme-800", "text-white");
-      step.classList.add("bg-slate-200", "text-slate-500");
-    }
-  });
-}
+  document.addEventListener("DOMContentLoaded", loadDashboardData);
 </script>
 
   <!-- REPAYMENT MODAL -->
